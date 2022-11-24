@@ -7,9 +7,25 @@
 
 ## 开始
 
+### 局部安装
+
 ```yaml
 dev_dependencies:
-  tencent_cos_plus: ^1.0.0
+  flutter_web_optimizer: ^1.0.0
+```
+
+### 全局安装
+
+#### 启用
+
+```shell
+flutter pub global activate flutter_web_optimizer
+```
+
+#### 停用
+
+```shell
+flutter pub global deactivate flutter_web_optimizer
 ```
 
 ## 用法
@@ -24,6 +40,8 @@ dev_dependencies:
 
 ```shell
 flutter pub run flutter_web_optimizer plugin --path scripts/test_plugin.dart
+or
+flutter_web_optimizer plugin --path scripts/test_plugin.dart
 ```
 
 - `path`参数必传，指自定义`plugin`文件的位置。
@@ -34,9 +52,11 @@ flutter pub run flutter_web_optimizer plugin --path scripts/test_plugin.dart
 
 ```shell
 flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin scripts/test_plugin.dart
+or 
+flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin scripts/test_plugin.dart
 ```
 
-- `asset-base` 参数必传，一般是文件服务器上存储对应资源文件的地址，**地址必须是 / 结尾**
-- `web-output` 参数非必传，指`flutter web build`的打包产物的文件夹位置，以当前命令行窗口为根路径，默认是`build/web`。
+- `asset-base`参数必传，一般是文件服务器上存储对应资源文件的地址，**地址必须是/结尾**
+- `web-output`参数非必传，指`flutter web build`的打包产物的文件夹位置，以当前命令行窗口为根路径，默认是`build/web`。
 - `plugin`参数非必传，指插件文件位置，若需要将资源文件上传至服务器，则必传。
   [cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart)文件已经实现了一套将资源文件上传至腾讯的cos的功能，可以参考。
