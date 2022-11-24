@@ -1,5 +1,5 @@
-import 'package:flutter_web_optimizer/flutter_web_optimizer.dart' as flutter_web_optimizer;
+import 'package:flutter_web_optimizer/executable.dart' as executable;
 
 void main(List<String> arguments) {
-  print('Hello world: ${flutter_web_optimizer.calculate()}!');
+  executable.main(arguments);
 }
