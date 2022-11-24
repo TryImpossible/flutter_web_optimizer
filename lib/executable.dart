@@ -18,7 +18,8 @@ final _mockPluginCmdArgs = [
 ];
 
 void main(List<String> arguments) {
-  CommandRunner('flutter_web_optimizer', 'app_cli description')
+  CommandRunner(
+      'flutter_web_optimizer', 'an optimization solution for flutter web')
     ..addCommand(PluginCommand())
     ..addCommand(OptimizeCommand())
     // ..run(_mockOptimizeCmdArgs);

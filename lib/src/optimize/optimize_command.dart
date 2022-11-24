@@ -38,7 +38,8 @@ class OptimizeCommand extends Command<void> {
   }
 
   @override
-  String get description => 'an load optimization solution for flutter web';
+  String get description =>
+      'solve web page loading slow and browser cache problem';
 
   @override
   String get name => 'optimize';
@@ -340,7 +341,8 @@ class OptimizeCommand extends Command<void> {
     Directory(_webOutput)
         .listSync()
         .whereType<File>() // 文件类型
-        .where((File file) => RegExp(r'main.dart(.*)\.js$').hasMatch(file.path))
+        .where(
+            (File file) => RegExp(r'main\.dart(.*)\.js$').hasMatch(file.path))
         .forEach((File file) {
       // 修正源码引用AssetManifest.json和FontManifest.json文件
       String contents = file
