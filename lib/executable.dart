@@ -6,8 +6,14 @@ import 'src/plugin/plugin_command.dart';
 final _mockOptimizeCmdArgs = [
   'optimize',
   '--asset-base',
-  'http://test-app-1251021022.cos.ap-guangzhou.myqcloud.com/manbumata/dev/',
+  'http://192.168.101.93:9091/app/',
   '--plugin',
+  'scripts/cos_upload_plugin.dart',
+];
+
+final _mockPluginCmdArgs = [
+  'plugin',
+  '--path',
   'scripts/cos_upload_plugin.dart',
 ];
 
@@ -15,6 +21,7 @@ void main(List<String> arguments) {
   CommandRunner('flutter_web_optimizer', 'app_cli description')
     ..addCommand(PluginCommand())
     ..addCommand(OptimizeCommand())
-    // ..run(_mockChannelCmdArgs);
+    // ..run(_mockOptimizeCmdArgs);
+    // ..run(_mockPluginCmdArgs);
     ..run(arguments);
 }
