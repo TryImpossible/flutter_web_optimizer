@@ -1,8 +1,8 @@
 import 'dart:isolate';
 
 import 'package:flutter_web_optimizer/flutter_web_optimizer.dart';
-import 'package:tencent_cos_plus/tencent_cos_plus.dart';
 import 'package:path/path.dart' as path;
+import 'package:tencent_cos_plus/tencent_cos_plus.dart';
 
 /// [arguments] shell args from flutter pub run flutter_web_optimizer optimize
 /// eq: flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin scripts/cos_upload_plugin.dart
@@ -77,6 +77,7 @@ Future<void> _uploadCOS({
       uploadFiles.map<Future<dynamic>>((String filePath) {
     String objectKey = path.relative(filePath, from: webOutput);
     objectKey = '$cdnPrefixPath$objectKey';
+    objectKey = path.toUri(objectKey).toString();
     print('to upload file: $objectKey');
     return COSApiFactory.objectApi.putFileObject(
       objectKey: objectKey,
