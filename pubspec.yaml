@@ -1,5 +1,5 @@
 name: flutter_web_optimizer
-description: A command-line application provide an load optimization solution for flutter web
+description: A command-line application provide an load optimization solution for flutter web，solve web page loading slow and browser cache problem
 version: 1.1.0
 homepage: https://github.com/TryImpossible/flutter_web_optimizer
 
