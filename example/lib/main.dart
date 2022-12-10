@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart' show CupertinoActivityIndicator;
 import 'package:flutter/material.dart';
 
 import 'main_page.dart';
-import 'sub_page.dart' deferred as subPage;
+import 'sub_page.dart' deferred as sub_page;
 
 void main() {
   runApp(const App());
@@ -33,10 +33,10 @@ class App extends StatelessWidget {
         '/main': (_) => const MainPage(),
         '/sub': (_) {
           return FutureBuilder<void>(
-            future: subPage.loadLibrary(),
+            future: sub_page.loadLibrary(),
             builder: (_, AsyncSnapshot<void> snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
-                return subPage.SubPage();
+                return sub_page.SubPage();
               } else {
                 return const CupertinoActivityIndicator();
               }

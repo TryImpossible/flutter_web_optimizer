@@ -15,9 +15,8 @@ dependencies:
   package_config: ^2.1.0
   # https://pub.dev/packages/tencent_cos_plus
   tencent_cos_plus: ^1.2.0
-
-  flutter_web_optimizer:
-    path: ../../
+  # https://pub.dev/packages/flutter_web_optimizer
+  flutter_web_optimizer: ^1.1.0
 
 dev_dependencies:
   lints: ^2.0.0

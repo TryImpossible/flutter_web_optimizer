@@ -81,10 +81,10 @@ packages:
   flutter_web_optimizer:
     dependency: "direct main"
     description:
-      path: "../.."
-      relative: true
-    source: path
-    version: "1.0.1"
+      name: flutter_web_optimizer
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.1.0"
   frontend_server_client:
     dependency: transitive
     description:
