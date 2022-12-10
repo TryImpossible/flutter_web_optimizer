@@ -30,7 +30,7 @@ jobs:
       - name: Build
         run: |
           cd example
-          flutter build web --web-renderer html --pwa-strategy none --base-href https://tryimpossible.github.io/flutter_web_optimizer/
+          flutter build web --web-renderer html --pwa-strategy none
 
       - name: Replace href attribute of index.html
         run: |
