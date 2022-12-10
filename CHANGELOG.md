@@ -1,3 +1,11 @@
+## 1.1.0
+
+- update `plugin` command，allow any plugin name 
+- update `optimize` command
+  - modify web optimize steps
+  - `--plugin` parameter support file mode and plugin mode
+- update `example` project，test the usage of plugin mode  
+
 ## 1.0.1
 
 - update README
