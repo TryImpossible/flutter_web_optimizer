@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as path;
+
 import 'template_plugin.dart';
 
 class PluginCommand extends Command<void> {
@@ -25,14 +26,7 @@ class PluginCommand extends Command<void> {
 
   @override
   FutureOr<void> run() async {
-    String basename = path.basenameWithoutExtension(pluginPath);
-    if (!RegExp(r'^.+_plugin$').hasMatch(basename)) {
-      basename += '_plugin';
-    }
-    basename = path.setExtension(basename, '.dart');
-
-    final String fullPluginPath =
-        path.join(path.context.current, path.dirname(pluginPath), basename);
+    final String fullPluginPath = path.join(path.context.current, pluginPath);
 
     File(fullPluginPath)
       ..createSync(recursive: true)
