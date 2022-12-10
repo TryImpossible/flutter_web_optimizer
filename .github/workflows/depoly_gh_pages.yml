@@ -16,6 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - run: cd example
+
       - name: Setup Flutter
         run: |
           git clone https://github.com/flutter/flutter.git --depth 1 -b beta _flutter
@@ -27,9 +29,7 @@ jobs:
           flutter pub get
 
       - name: Build
-        run: |
-          cd example
-          flutter build web --web-renderer html --pwa-strategy none --base-href https://tryimpossible.github.io/flutter_web_optimizer/
+        run: flutter build web --web-renderer html --pwa-strategy none --base-href https://tryimpossible.github.io/flutter_web_optimizer/
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
