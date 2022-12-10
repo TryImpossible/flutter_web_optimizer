@@ -32,6 +32,11 @@ jobs:
           cd example
           flutter build web --web-renderer html --pwa-strategy none --base-href https://tryimpossible.github.io/flutter_web_optimizer/
 
+      - name: Replace href attribute of index.html
+        run: |
+          cd example/build/web
+          sed -i '/<base href=\"\/\">/c <base href="https://tryimpossible.github.io/flutter_web_optimizer/">' index.html         
+
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         if: ${{ github.ref == 'refs/heads/main' }}
