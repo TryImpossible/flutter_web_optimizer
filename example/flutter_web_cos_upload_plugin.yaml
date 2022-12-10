@@ -1,0 +1,7 @@
+cos:
+  config:
+    appId: 'xxx'
+    secretId: 'xxx'
+    secretKey: 'xxx'
+  bucketName: 'xxx'
+  region: 'xxx'

@@ -1,6 +1,0 @@
-# cdn asset base url
-asset_base: http://192.168.101.93:9091/
-
-cdn_upload:
-  #  custom upload file
-  custom_upload_file_name: cos_upload_plugin.dart
