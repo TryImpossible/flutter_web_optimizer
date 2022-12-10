@@ -6,12 +6,14 @@ import 'package:tencent_cos_plus/tencent_cos_plus.dart';
 
 /// [arguments] shell args from flutter pub run flutter_web_optimizer optimize
 /// eq: flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin scripts/cos_upload_plugin.dart
+///
+/// The template code is generate by flutter web optimizer
 Future<void> main(List<String> arguments, SendPort sendPort) async {
-  // do not delete
+  // create a new [ReceivePort] instance
   ReceivePort receivePort = ReceivePort();
-  // do not delete
+  // send [receivePort.sendPort] to server for exchnage message
   sendPort.send(receivePort.sendPort);
-  // do not delete
+  // [receivePort] listen for message
   receivePort.listen((dynamic message) {
     print('client isolate get message: $message');
     if (message is Map<String, Object>) {
@@ -49,7 +51,7 @@ Future<void> _uploadCOS({
   final String assetBase = arguments[1];
 
   /// web-output
-  final String webOutput = '${path.current}/build/web';
+  final String webOutput = path.join(path.current, 'build', 'web');
 
   // cdn的前缀路径
   final Uri uri = Uri.parse(assetBase);
@@ -89,16 +91,4 @@ Future<void> _uploadCOS({
   final IsolateMessageProtocol response =
       IsolateMessageProtocol.response(IsolateMessageAction.cdnAssets);
   sendPort.send(response.toMap());
-
-  // Directory(webOutput)
-  //     .listSync(recursive: true)
-  //     .whereType<File>()
-  //     .forEach((File file) {
-  //   final String partPath =
-  //       path.relative(file.path, from: webOutput);
-  //   final String filePath =
-  //       path.join('${Directory.current.path}/build/cdn', partPath);
-  //   File(filePath).createSync(recursive: true);
-  //   file.copySync(filePath);
-  // });
 }
