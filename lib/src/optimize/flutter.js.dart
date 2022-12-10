@@ -87,7 +87,8 @@ _flutter.loader = null;
     _loadEntrypoint(entrypointUrl) {
       if (!this._scriptLoaded) {
         this._scriptLoaded = new Promise((resolve, reject) => {
-          const promises = Object.keys(jsManifest).filter(key => /main.dart_\d.js/g.test(key)).sort().map(key => `${assetBase}${jsManifest[key]}`).map(this._downloadSplitJs);
+          // The code below is injected by flutter web optimizer, do not edit!!!!!!
+          const promises = Object.keys(jsManifest).filter(key => /^main\.dart_(\d)\.js$/g.test(key)).sort().map(key => `${assetBase}${jsManifest[key]}`).map(this._downloadSplitJs);
           Promise.all(promises).then((values)=>{
             const contents = values.join("");
             const script = document.createElement("script");

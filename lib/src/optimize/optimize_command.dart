@@ -8,6 +8,7 @@ import 'package:args/command_runner.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' show parse;
+import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as path;
 
 import '../common/logger.dart';
@@ -45,25 +46,13 @@ class OptimizeCommand extends Command<void> {
   String get name => 'optimize';
 
   /// 资源路径，一般是cdn地址
-  String get _assetBase => argResults!['asset-base'] ?? '';
+  late String _assetBase;
 
   /// Web构建产物路径
-  String get _webOutput {
-    final String? webOutput = argResults!['web-output'];
-    if (webOutput?.isNotEmpty ?? false) {
-      return path.join(path.context.current, webOutput!);
-    }
-    return path.join(path.context.current, 'build/web');
-  }
+  late String _webOutput;
 
   /// plugin 文件路径，支持处理资源上传cdn等操作
-  String get _plugin {
-    final String? pluginFile = argResults!['plugin'];
-    if (pluginFile?.isNotEmpty ?? false) {
-      return path.join(path.context.current, pluginFile!);
-    }
-    return '';
-  }
+  late String _plugin;
 
   /// isolate通信，发送信息
   SendPort? _sendPort;
@@ -84,7 +73,9 @@ class OptimizeCommand extends Command<void> {
   FutureOr<void> run() async {
     Logger.info('start web optimize');
 
-    await _initIsolate(argResults!.arguments);
+    await _parseArgs();
+
+    await _initIsolate();
 
     final Directory outputDir = Directory(_webOutput);
     if (!outputDir.existsSync()) {
@@ -100,13 +91,13 @@ class OptimizeCommand extends Command<void> {
             (File entity) => path.basename(entity.path) == 'main.dart.js');
     await _splitMainDartJS(mainDartJsFile);
 
-    _hashAssets();
-
-    await _cdnAssets();
-
     _replaceFlutterJS();
 
+    _hashAssets();
+
     _injectToHtml();
+
+    await _cdnAssets();
 
     _disposeIsolate();
 
@@ -146,30 +137,50 @@ class OptimizeCommand extends Command<void> {
   //   }
   // }
 
-  /// 解析 flutter_web_optimizer.yaml 文件
-  // void _parseYaml() {
-  //   final String contents =
-  //       File('${path.current}/flutter_web_optimizer.yaml').readAsStringSync();
-  //   final dynamic doc = loadYaml(contents);
-  //   if (doc is! Map) {
-  //     return;
-  //   }
-  //   _assetBase = doc['asset_base'] ?? '';
-  //   if (_assetBase.isEmpty) {
-  //     throw Exception(
-  //         '[flutter_web_optimizer.yaml]: asset_base_url args not be null!!!');
-  //   }
-  //   if (doc['cdn_upload'] is! Map<dynamic, dynamic>) {
-  //     return;
-  //   }
-  //   if (doc['cdn_upload']['custom_upload_file_name'] is! String) {
-  //     return;
-  //   }
-  //   _plugin = doc['cdn_upload']['custom_upload_file_name'] ?? '';
-  // }
+  Future<void> _parseArgs() async {
+    /// 资源路径，一般是cdn地址
+    _assetBase = argResults!['asset-base'] ?? '';
+
+    /// Web构建产物路径
+    final String? webOutput = argResults!['web-output'];
+    if (webOutput?.isNotEmpty ?? false) {
+      _webOutput = path.join(path.context.current, webOutput!);
+    }
+    _webOutput = path.join(path.context.current, 'build', 'web');
+
+    /// plugin 文件路径，支持处理资源上传cdn等操作
+    final String? plugin = argResults!['plugin'];
+    if (plugin?.isEmpty ?? true) {
+      _plugin = '';
+      return;
+    }
+    if (path.extension(plugin!).isNotEmpty) {
+      /// Uri
+      _plugin = path.join(path.context.current, plugin);
+    } else {
+      /// Not Uri
+      final PackageConfig? packageConfig =
+          await findPackageConfig(Directory.current);
+      if (packageConfig == null) {
+        _plugin = '';
+        return;
+      }
+      try {
+        final Package package = packageConfig.packages
+            .singleWhere((Package element) => element.name == plugin);
+        _plugin = path.join(package.packageUriRoot.toFilePath(), plugin);
+        _plugin = path.setExtension(_plugin, '.dart');
+      } catch (_) {
+        _plugin = '';
+      }
+    }
+    if (!File(_plugin).existsSync()) {
+      throw Exception('plugin args is invalid!!!');
+    }
+  }
 
   /// 初始化isolate通信
-  Future<void> _initIsolate(List<String> args) {
+  Future<void> _initIsolate() {
     final Completer<void> completer = Completer<void>();
     if (_plugin.isEmpty) {
       completer.complete();
@@ -180,23 +191,31 @@ class OptimizeCommand extends Command<void> {
 
     _receivePort ??= ReceivePort();
     _receivePort!.listen((dynamic message) {
-      Logger.info('server isolate get message: $message');
-      if (message is Map<String, Object>) {
-        controller.add(IsolateMessageProtocol.fromMap(message));
-      }
       if (message is SendPort) {
         _sendPort = message;
         completer.complete();
       }
+
+      if (message is Map<String, Object>) {
+        Logger.info('server isolate get message: $message');
+        controller.add(IsolateMessageProtocol.fromMap(message));
+      }
     });
 
-    Isolate.spawnUri(Uri.file(_plugin), args, _receivePort!.sendPort);
+    Isolate.spawnUri(
+      Uri.file(_plugin),
+      argResults!.arguments,
+      _receivePort!.sendPort,
+    );
     return completer.future;
   }
 
   /// 释放isolate通信
   void _disposeIsolate() {
     _receivePort?.close();
+    _receivePort = null;
+    _sendPort = null;
+    _message = null;
   }
 
   /// 拆分 main.dart.js
@@ -235,7 +254,7 @@ class OptimizeCommand extends Command<void> {
 
     const int totalChunk = 6;
     final Uint8List bytes = file.readAsBytesSync();
-    int chunkSize = (bytes.length / totalChunk).ceil();
+    final int chunkSize = (bytes.length / totalChunk).ceil();
     final List<Future<bool>> futures = List<Future<bool>>.generate(
       totalChunk,
       (int index) {
@@ -254,16 +273,24 @@ class OptimizeCommand extends Command<void> {
     file.deleteSync();
   }
 
+  /// 替换 flutter.js
+  void _replaceFlutterJS() {
+    File('$_webOutput/flutter.js').writeAsStringSync(flutterJSSourceCode);
+  }
+
   /// md5文件
   String _md5File(File file) {
+    Logger.info('hashing file: ${file.path}');
     final Uint8List bytes = file.readAsBytesSync();
     // 截取8位即可
-    final md5Hash = crypto.md5.convert(bytes).toString().substring(0, 8);
+    final String md5Hash = crypto.md5.convert(bytes).toString().substring(0, 8);
 
     // 文件名使用hash值
-    final basename = path.basenameWithoutExtension(file.path);
-    final extension = path.extension(file.path);
-    return '$basename.$md5Hash$extension';
+    final String basename = path.basenameWithoutExtension(file.path);
+    final String extension = path.extension(file.path);
+    final String filename = '$basename.$md5Hash$extension';
+    Logger.info('hashed file name: $filename');
+    return filename;
   }
 
   /// 资源hash化
@@ -277,8 +304,11 @@ class OptimizeCommand extends Command<void> {
     ) {
       // 文件名使用hash值
       final String filename = _md5File(file);
+      // 统一将路径分隔符修改成 / ，assetManifest 和 fontManifest 使用的是 posix 平台的分隔符 /
+      key = path.toUri(key).toString();
       final String dirname = path.dirname(key);
-      final String newKey = path.join(dirname, filename);
+      String newKey = path.join(dirname, filename);
+      newKey = path.toUri(newKey).toString();
 
       // hash文件路径
       final String newPath = path.join(path.dirname(file.path), filename);
@@ -287,15 +317,37 @@ class OptimizeCommand extends Command<void> {
       return '${match[1]}$newKey${match[3]}';
     }
 
-    // 读取资源清单文件
-    final File assetManifest = File('$_webOutput/assets/AssetManifest.json');
-    String assetManifestContent = assetManifest.readAsStringSync();
-    // 读取字体清单文件
-    final File fontManifest = File('$_webOutput/assets/FontManifest.json');
-    String fontManifestContent = fontManifest.readAsStringSync();
-
     // 需要hash的文件
     final Map<String, String> hashFiles = <String, String>{};
+
+    // 读取 manifest.json 清单文件
+    final File manifest = File(path.join(_webOutput, 'manifest.json'));
+    String manifestContents = manifest.readAsStringSync();
+    // 遍历构建产物icons目录
+    final Directory iconsDir = Directory(path.join(_webOutput, 'icons'));
+    iconsDir
+        .listSync()
+        .whereType<File>() // 文件类型
+        .where((File file) => !path.basename(file.path).startsWith('.'))
+        .forEach((File file) {
+      final String key = path.relative(file.path, from: _webOutput);
+      // 替换 manifest.json 清单文件
+      manifestContents = manifestContents.replaceFirstMapped(
+        RegExp('(.*)($key)(.*)'),
+        (Match match) => replace(match, file, key, hashFiles),
+      );
+    });
+    // 写入修改后的 manifest.json 清单文件
+    manifest.writeAsStringSync(manifestContents);
+
+    // 读取资源清单文件
+    final File assetManifest =
+        File(path.join(_webOutput, 'assets', 'AssetManifest.json'));
+    String assetManifestContents = assetManifest.readAsStringSync();
+    // 读取字体清单文件
+    final File fontManifest =
+        File(path.join(_webOutput, 'assets', 'FontManifest.json'));
+    String fontManifestContents = fontManifest.readAsStringSync();
 
     // 遍历构建产物assets目录，对资源文件md5后获取哈希值，并修改资源、字体清单文件
     final Directory assetsDir = Directory(path.join(_webOutput, 'assets'));
@@ -306,20 +358,20 @@ class OptimizeCommand extends Command<void> {
         .forEach((File file) {
       final String key = path.relative(file.path, from: assetsDir.path);
       // 替换资源清单文件
-      assetManifestContent = assetManifestContent.replaceAllMapped(
+      assetManifestContents = assetManifestContents.replaceFirstMapped(
         RegExp('(.*)($key)(.*)'),
         (Match match) => replace(match, file, key, hashFiles),
       );
       // 替换字体清单文件
-      fontManifestContent = fontManifestContent.replaceAllMapped(
+      fontManifestContents = fontManifestContents.replaceAllMapped(
         RegExp('(.*)($key)(.*)'),
         (Match match) => replace(match, file, key, hashFiles),
       );
     });
 
     // 写入修改后的资源、字体清单文件
-    assetManifest.writeAsStringSync(assetManifestContent);
-    fontManifest.writeAsStringSync(fontManifestContent);
+    assetManifest.writeAsStringSync(assetManifestContents);
+    fontManifest.writeAsStringSync(fontManifestContents);
 
     // 将AssetManifest.json文件进行md5
     String assetManifestFileName = 'AssetManifest.json';
@@ -337,21 +389,23 @@ class OptimizeCommand extends Command<void> {
     hashFiles[fontManifestFile.path] =
         path.join(path.dirname(fontManifestFile.path), fontManifestFileName);
 
-    // 遍历构建产物根目录
-    Directory(_webOutput)
-        .listSync()
-        .whereType<File>() // 文件类型
-        .where(
-            (File file) => RegExp(r'main\.dart(.*)\.js$').hasMatch(file.path))
-        .forEach((File file) {
-      // 修正源码引用AssetManifest.json和FontManifest.json文件
-      String contents = file
-          .readAsStringSync()
-          .replaceAll(RegExp(r'AssetManifest.json'), assetManifestFileName)
-          .replaceAll(RegExp(r'FontManifest.json'), fontManifestFileName);
-      file.writeAsStringSync(contents);
-
-      // 替换资js文件
+    /// 遍历构建产物根目录
+    Directory(_webOutput).listSync().whereType<File>() // 文件类型
+        .where((File file) {
+      final String filename = path.basename(file.path);
+      return RegExp(
+              r'(main\.dart(.*)\.js)|(favicon.png)|(flutter.js)|(manifest.json)')
+          .hasMatch(filename);
+    }).forEach((File file) {
+      if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(path.basename(file.path))) {
+        // 查找 main.dart.js 的分片文件 main.dart_xxx.js
+        // 修正 AssetManifest.json 和 FontManifest.json 文件在源码中的引用
+        String contents = file
+            .readAsStringSync()
+            .replaceAll(RegExp(r'AssetManifest.json'), assetManifestFileName)
+            .replaceAll(RegExp(r'FontManifest.json'), fontManifestFileName);
+        file.writeAsStringSync(contents);
+      }
       final String filename = _md5File(file);
       hashFiles[file.path] = path.join(path.dirname(file.path), filename);
       _jsManifest[path.basename(file.path)] = filename;
@@ -366,15 +420,98 @@ class OptimizeCommand extends Command<void> {
     _toUploadFiles = hashFiles.values.toList();
   }
 
+  /// 修改 index.html
+  void _injectToHtml() {
+    /// 读取index.html
+    final File file = File('$_webOutput/index.html');
+    String contents = file.readAsStringSync();
+
+    /// 替换哈希后的文件
+    final List<String> replaceValues = <String>[
+      'icons/Icon-192.png',
+      'favicon.png',
+      'manifest.json',
+      'flutter.js',
+    ];
+    for (final String value in replaceValues) {
+      String extension = path.extension(value);
+      extension = '\\.(.*?)\\$extension';
+      final RegExpMatch? match = RegExp(path.setExtension(value, extension))
+          .firstMatch(_toUploadFiles.toString());
+      if ((match?.groupCount ?? 0) > 0) {
+        contents =
+            contents.replaceAll(RegExp(value), '$_assetBase${match?.group(0)}');
+      }
+    }
+
+    /// 解析 index.html 为 Document
+    final Document document = parse(contents);
+
+    final Element? headElement = document.head;
+    if (headElement != null) {
+      /// 注入 assetBase meta 标签
+      void injectAssetBaseMeta(Element element) {
+        final Element meta = Element.tag('meta');
+        meta.attributes['name'] = 'assetBase';
+        meta.attributes['content'] = _assetBase;
+
+        element.append(Text('\n'));
+        element.append(Comment('content值必须以 / 结尾'));
+        element.append(Text('\n'));
+        element.append(meta);
+        element.append(Text('\n'));
+      }
+
+      final List<Element> metas = document.getElementsByTagName('meta');
+      if (metas.isNotEmpty) {
+        injectAssetBaseMeta(metas.last);
+      } else {
+        injectAssetBaseMeta(headElement);
+      }
+    }
+
+    if (headElement != null) {
+      /// 注入 dartDeferredLibraryLoader script
+      final String dartDeferredLibraryLoader =
+          dartDeferredLibraryLoaderSourceCode
+              .replaceAll(
+                RegExp('var assetBase = null;'),
+                'var assetBase = "$_assetBase";',
+              )
+              .replaceAll(
+                RegExp('var jsManifest = null;'),
+                'var jsManifest = ${jsonEncode(_jsManifest)};',
+              );
+
+      final Element script = Element.tag('script');
+      script.text = '\n$dartDeferredLibraryLoader';
+
+      final List<Element> scripts = document.getElementsByTagName('script');
+      if (scripts.length > 1) {
+        final Element firstScript = scripts.first;
+        headElement.insertBefore(script, firstScript);
+        headElement.insertBefore(Text('\n'), firstScript);
+      } else {
+        headElement.append(script);
+        headElement.append(Text('\n'));
+      }
+    }
+
+    // 写入文件
+    file.writeAsStringSync(document.outerHtml);
+  }
+
   /// 资源cdn化
   Future<void> _cdnAssets() async {
     final Completer<void> completer = Completer<void>();
     if (_plugin.isEmpty) {
       completer.complete();
     }
-    _message?.listen((IsolateMessageProtocol protocol) {
+    StreamSubscription<IsolateMessageProtocol>? subscription;
+    subscription = _message?.listen((IsolateMessageProtocol protocol) {
       if (protocol.isResponse &&
           protocol.action == IsolateMessageAction.cdnAssets) {
+        subscription?.cancel();
         completer.complete();
       }
     });
@@ -383,91 +520,5 @@ class OptimizeCommand extends Command<void> {
       _toUploadFiles,
     ).toMap());
     return completer.future;
-  }
-
-  /// 替换 flutter.js
-  void _replaceFlutterJS() {
-    File('$_webOutput/flutter.js').writeAsStringSync(flutterJSSourceCode);
-  }
-
-  /// 向 index.html 注入
-  void _injectToHtml() {
-    /// 读取index.html
-    final File file = File('$_webOutput/index.html');
-    String contents = file.readAsStringSync();
-
-    /// flutter.js哈希化并修改index.html的 flutter.js script
-    final File flutterJsFile = File('$_webOutput/flutter.js');
-    final String filename = _md5File(flutterJsFile);
-    flutterJsFile
-        .renameSync(path.join(path.dirname(flutterJsFile.path), filename));
-    contents = contents.replaceAll(
-      RegExp(r'<script src="flutter.js" defer></script>'),
-      '<script src="$filename" defer></script>',
-    );
-
-    /// 解析 index.html 为 Document
-    final Document document = parse(contents);
-
-    /// 注入meta标签
-    final List<Element> metas = document.getElementsByTagName('meta');
-    final Element? headElement = document.head;
-    if (headElement != null) {
-      final Element meta = Element.tag('meta');
-      meta.attributes['name'] = 'assetBase';
-      meta.attributes['content'] = _assetBase;
-
-      if (metas.isNotEmpty) {
-        final Element lastMeta = metas.last;
-        lastMeta.append(Text('\n'));
-        lastMeta.append(Comment('content值必须以 / 结尾'));
-        lastMeta.append(Text('\n'));
-        lastMeta.append(meta);
-      } else {
-        headElement.append(Comment('content值必须以 / 结尾'));
-        headElement.append(Text('\n'));
-        headElement.append(meta);
-        headElement.append(Text('\n'));
-      }
-    }
-
-    /// 注入script
-    final String dartDeferredLibraryLoader = dartDeferredLibraryLoaderSourceCode
-        .replaceAll(
-            RegExp('var assetBase = null;'), 'var assetBase = "$_assetBase";')
-        .replaceAll(
-          RegExp('var jsManifest = null;'),
-          'var jsManifest = ${jsonEncode(_jsManifest)};',
-        );
-    final List<Element> scripts = document.getElementsByTagName('script');
-    // 是否注入js
-    bool isInjected = false;
-    for (int i = 0; i < scripts.length; i++) {
-      final Element element = scripts[i];
-      if (element.text.contains(RegExp(r'var serviceWorkerVersion'))) {
-        element.text = '${element.text}\n$dartDeferredLibraryLoader';
-        isInjected = true;
-        break;
-      }
-    }
-    if (!isInjected) {
-      final Element? headElement = document.head;
-      if (headElement != null) {
-        final Element script = Element.tag('script');
-        script.text = '\n$dartDeferredLibraryLoader';
-
-        if (scripts.length > 1) {
-          final Element firstScript = scripts.first;
-          headElement.insertBefore(script, firstScript);
-          headElement.insertBefore(Text('\n'), firstScript);
-        } else {
-          headElement.append(script);
-          headElement.append(Text('\n'));
-        }
-      }
-    }
-
-    // 写入文件
-    file.writeAsStringSync(document.outerHtml);
   }
 }

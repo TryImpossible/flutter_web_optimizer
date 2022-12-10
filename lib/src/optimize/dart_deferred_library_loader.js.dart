@@ -1,5 +1,5 @@
 const String dartDeferredLibraryLoaderSourceCode = r'''
-    // auto-generate, dont edit!!!!!!
+    // The code below is injected by flutter web optimizer, do not edit!!!!!!
     var assetBase = null;
     var jsManifest = null;
     function dartDeferredLibraryLoader(uri, successCallback, errorCallback, loadId) {
@@ -7,10 +7,10 @@ const String dartDeferredLibraryLoaderSourceCode = r'''
       let src;
       try {
         const url = new URL(uri);
-        const key = url.pathname.replaceAll(/(.*)(main\.dart\..+\.js)/g, '$2');
+        const key = url.pathname.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
         src = `${assetBase}${jsManifest[key]}`;
       } catch (e) {
-        const key = uri.replaceAll(/(.*)(main\.dart\..+\.js)/g, '$2');
+        const key = uri.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
         src = `${assetBase}${jsManifest[key]}`;
       }
       
