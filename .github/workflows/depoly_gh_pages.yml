@@ -50,10 +50,10 @@ jobs:
           cd example
           flutter build web --web-renderer html --pwa-strategy none
 
-#      - name: Replace Href Attribute
-#        run: |
-#          cd example/build/web
-#          sed -i '/<base href=\"\/\">/c <base href="https://tryimpossible.github.io/flutter_web_optimizer/">' index.html
+      - name: Replace Href Attribute
+        run: |
+          cd example/build/web
+          sed -i '/<base href=\"\/\">/c <base href="https://tryimpossible.github.io/flutter_web_optimizer/">' index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v2
