@@ -73,12 +73,15 @@ jobs:
           # Upload entire repository
           path: './example/build/web'
 
-#      - name: Deploy
-#        uses: peaceiris/actions-gh-pages@v3
-#        if: ${{ github.ref == 'refs/heads/main' }}
-#        with:
+      - name: Deploy Flutter-Diy Repository
+        uses: peaceiris/actions-gh-pages@v3
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
 #          github_token: ${{ secrets.GITHUB_TOKEN }}
-#          publish_dir: ./example/build/web
+          deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          external_repository: TryImpossible/flutter-diy
+          publish_dir: ./example/build/web
+          exclude_assets: '.github,index.html'
 
   deploy:
     name: Deployment job
