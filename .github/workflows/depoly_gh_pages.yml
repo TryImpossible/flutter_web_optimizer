@@ -30,6 +30,16 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/flutter
+            ~/.pub-cache
+          key: ${{ runner.os }}-flutter-cache
+          restore-keys: |
+            ${{ runner.os }}-flutter-cache  
+
 #      - name: Setup Flutter
 #        run: |
 #          git clone https://github.com/flutter/flutter.git --depth 1 -b beta _flutter
@@ -39,14 +49,6 @@ jobs:
         run: |
           git clone https://github.com/flutter/flutter.git --depth 1 -b beta ~/flutter
           echo "~/flutter/bin" >> ${GITHUB_PATH}
-
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub
-          restore-keys: |
-            ${{ runner.os }}-pub
 
       - name: Install Flutter Dependencies
         run: |
