@@ -1,3 +1,7 @@
+## 1.1.1
+
+- fix bug
+
 ## 1.1.0
 
 - update `plugin` command，allow any plugin name 
