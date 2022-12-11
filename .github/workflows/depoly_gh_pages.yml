@@ -18,7 +18,6 @@ permissions:
 
 # Allow one concurrent deployment
 concurrency:
-#  group: "pages"
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
@@ -26,10 +25,6 @@ jobs:
   build:
     name: Build Job
     runs-on: ubuntu-latest
-#    permissions:
-#      contents: write
-#    concurrency:
-#      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - name: Checkout Code
       - uses: actions/checkout@v3
@@ -55,13 +50,6 @@ jobs:
           cd example/build/web
           sed -i '/<base href=\"\/\">/c <base href="https://tryimpossible.github.io/flutter_web_optimizer/">' index.html         
 
-#      - name: Deploy
-#        uses: peaceiris/actions-gh-pages@v3
-#        if: ${{ github.ref == 'refs/heads/main' }}
-#        with:
-#          github_token: ${{ secrets.GITHUB_TOKEN }}
-#          publish_dir: ./example/build/web
-
   deploy:
     name: Deployment job
     environment:
@@ -70,8 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-#      - name: Setup Pages
-#        uses: actions/configure-pages@v2
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
