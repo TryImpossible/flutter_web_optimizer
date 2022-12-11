@@ -58,7 +58,7 @@ jobs:
         run: |
           cd example
           flutter build web --web-renderer html --pwa-strategy none --base-href /flutter_web_optimizer/
-          flutter pub run flutter_web_optimizer optimize --asset-base https://tryimpossible.github.io/flutter-diy/
+          flutter pub run flutter_web_optimizer optimize --asset-base https://tryimpossible.github.io/flutter-diy/flutter-web-optimizer-example-artifact/
 
 #      - name: Replace Href Attribute
 #        run: |
@@ -81,8 +81,10 @@ jobs:
 #          github_token: ${{ secrets.GITHUB_TOKEN }}
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           publish_dir: ./example/build/web
-          publish_branch: flutter-web-optimizer-example  # default: gh-pages
+#          publish_branch: flutter-web-optimizer-example-artifact  # default: gh-pages
+          publish_branch: gh-pages
           external_repository: TryImpossible/flutter-diy
+          destination_dir: flutter-web-optimizer-example-artifact
           exclude_assets: '.github,index.html'
 
   deploy:
