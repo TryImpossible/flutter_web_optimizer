@@ -26,10 +26,6 @@ jobs:
   build:
     name: Build Job
     runs-on: ubuntu-latest
-#    permissions:
-#      contents: write
-#    concurrency:
-#      group: ${{ github.workflow }}-${{ github.ref }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -48,12 +44,12 @@ jobs:
       - name: Build Web
         run: |
           cd example
-          flutter build web --web-renderer html --pwa-strategy none
+          flutter build web --web-renderer html --pwa-strategy none --base-href /flutter_web_optimizer/
 
-      - name: Replace Href Attribute
-        run: |
-          cd example/build/web
-          sed -i '/<base href=\"\/\">/c <base href="https://tryimpossible.github.io/flutter_web_optimizer/">' index.html
+#      - name: Replace Href Attribute
+#        run: |
+#          cd example/build/web
+#          sed -i '/<base href=\"\/\">/c <base href="https://tryimpossible.github.io/flutter_web_optimizer/">' index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v2
@@ -64,8 +60,7 @@ jobs:
           # Upload entire repository
           path: './example/build/web'
 
-
-  #      - name: Deploy
+#      - name: Deploy
 #        uses: peaceiris/actions-gh-pages@v3
 #        if: ${{ github.ref == 'refs/heads/main' }}
 #        with:
