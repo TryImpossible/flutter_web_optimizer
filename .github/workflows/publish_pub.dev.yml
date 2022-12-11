@@ -23,5 +23,5 @@ jobs:
         with:
           accessToken: ${{ secrets.PUB_ACCESS_TOKEN }}
           refreshToken: ${{ secrets.PUB_REFRESH_TOKEN }}
-          dryRunOnly: true
+          skipTests: true
           format: true
