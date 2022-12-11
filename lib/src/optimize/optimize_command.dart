@@ -181,10 +181,11 @@ class OptimizeCommand extends Command<void> {
 
   /// 初始化isolate通信
   Future<void> _initIsolate() {
-    final Completer<void> completer = Completer<void>();
     if (_plugin.isEmpty) {
-      completer.complete();
+      return Future<void>.value();
     }
+
+    final Completer<void> completer = Completer<void>();
     final StreamController<IsolateMessageProtocol> controller =
         StreamController<IsolateMessageProtocol>.broadcast();
     _message = controller.stream;
@@ -503,10 +504,10 @@ class OptimizeCommand extends Command<void> {
 
   /// 资源cdn化
   Future<void> _cdnAssets() async {
-    final Completer<void> completer = Completer<void>();
     if (_plugin.isEmpty) {
-      completer.complete();
+      return Future<void>.value();
     }
+    final Completer<void> completer = Completer<void>();
     StreamSubscription<IsolateMessageProtocol>? subscription;
     subscription = _message?.listen((IsolateMessageProtocol protocol) {
       if (protocol.isResponse &&
