@@ -1,61 +1,54 @@
-一个命令行工具，针对`flutter web`加载慢和缓存问题提供了一套解决方案。
+## Intro
 
-## 功能
+A optimization tools for flutter web，solved web page loading slow and browser cache problem.
 
-- 通过大文件分片和资源文件cdn化方式，优化`flutter web`页面加载慢问题。
-- 通过资源文件hash化，解决浏览器强缓存导致功能无法更新问题。
+## Features
 
-## 开始
+- split large file and cdn resource file，optimize web page loading slow.
+- hashed resource file，solve browser cache problem.
 
-### 局部安装
+## Getting started
 
 ```yaml
 dev_dependencies:
   flutter_web_optimizer: ^1.0.0
 ```
 
-### 全局安装
-
-#### 启用
-
-```shell
-flutter pub global activate flutter_web_optimizer
-```
-
-#### 停用
-
-```shell
-flutter pub global deactivate flutter_web_optimizer
-```
-
-## 用法
+## Usage
 
 ![app_web_optimizer](https://github.com/TryImpossible/flutter_web_optimizer/raw/main/20221124-183101.png)
 
-在项目的根目录下执行`plugin`命令和`optimize`命令
+navigate to the root directory of the project，execute `plugin` and `optimize` command
 
-### plugin 命令
+### plugin command
 
-`plugin`命令实现自动生成插件模板文件，可以在插件里面实现将资源文件上传至文件服务器上，例如腾讯的cos、阿里的oss；
+the `plugin` command support auto generate plugin template files，then upload resources files to file
+servers，such as such as Tencent COS and Alibaba OSS
 
 ```shell
 flutter pub run flutter_web_optimizer plugin --path scripts/test_plugin.dart
-or
-flutter_web_optimizer plugin --path scripts/test_plugin.dart
 ```
 
-- `path`参数必传，指自定义`plugin`文件的位置。
+- `path` parameter required，refers to `plugin` file path.
 
-### optimize 命令
+### optimize command
 
-`optimize`命令针对`flutter build web`的打包产物作了大文件分片下载、资源文件hash化和资源文件cdn化三个优化。
+`optimize` command support split large file、hashing resource file and cdn resource file.
 
 ```shell
 flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin scripts/test_plugin.dart
-or 
-flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin scripts/test_plugin.dart
 ```
 
-- `asset-base`参数必传，一般是文件服务器上存储对应资源文件的地址，**地址必须是/结尾**
-- `web-output`参数非必传，指`flutter web build`的打包产物的文件夹位置，以当前命令行窗口为根路径，默认是`build/web`。
-- `plugin`参数非必传，指插件文件位置，若需要将资源文件上传至服务器，则必传。[cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart)文件已经实现了一套将资源文件上传至腾讯的cos的功能，可以参考。
+or
+
+```shell
+flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin flutter_web_cos_upload_plugin
+```
+
+- `asset-base` parameter required，refers to file server internet address，**it's must end with '/'**
+- `web-output` parameter not required，refers to `flutter web build` generated artifact path, default
+  as `build/web`.
+- `plugin` parameter not required，refers to plugin file path. if needs upload resource file to file
+  server，it's must be required.
+  [cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart) provide a example upload resource
+  file to tencent cos.
