@@ -398,7 +398,8 @@ class OptimizeCommand extends Command<void> {
               r'(main\.dart(.*)\.js)|(favicon.png)|(flutter.js)|(manifest.json)')
           .hasMatch(filename);
     }).forEach((File file) {
-      if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(path.basename(file.path))) {
+      final String basename = path.basename(file.path);
+      if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(basename)) {
         // 查找 main.dart.js 的分片文件 main.dart_xxx.js
         // 修正 AssetManifest.json 和 FontManifest.json 文件在源码中的引用
         String contents = file
@@ -409,7 +410,9 @@ class OptimizeCommand extends Command<void> {
       }
       final String filename = _md5File(file);
       hashFiles[file.path] = path.join(path.dirname(file.path), filename);
-      _jsManifest[path.basename(file.path)] = filename;
+      if (RegExp(r'^main\.dart(.*)part(.*)\.js$').hasMatch(basename)) {
+        _jsManifest[basename] = filename;
+      }
     });
 
     // 重命名文件
