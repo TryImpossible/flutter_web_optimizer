@@ -1,3 +1,8 @@
+## 1.1.2
+
+- fix bug
+- add english REMADME
+
 ## 1.1.1
 
 - fix bug
