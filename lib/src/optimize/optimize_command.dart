@@ -410,7 +410,7 @@ class OptimizeCommand extends Command<void> {
       }
       final String filename = _md5File(file);
       hashFiles[file.path] = path.join(path.dirname(file.path), filename);
-      if (RegExp(r'^main\.dart(.*)part(.*)\.js$').hasMatch(basename)) {
+      if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(basename)) {
         _jsManifest[basename] = filename;
       }
     });
