@@ -1,3 +1,5 @@
+[中文文档](README.zh.md)
+
 ## Intro
 
 A optimization tools for flutter web，solved web page loading slow and browser cache problem.
@@ -48,7 +50,11 @@ flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.9
 - `asset-base` parameter required，refers to file server internet address，**it's must end with '/'**
 - `web-output` parameter not required，refers to `flutter web build` generated artifact path, default
   as `build/web`.
-- `plugin` parameter not required，refers to plugin file path. if needs upload resource file to file
-  server，it's must be required.
-  [cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart) provide a example upload resource
-  file to tencent cos.
+- `plugin` parameter not required，if needs upload resource file to file server，it's must be
+  required. it support file mode and plugin mode
+    - file mode: it's refers to plugin file
+      path. [cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart) provide a example
+      upload resource file to tencent cos.
+    - plugin mode: it's refers to plugin name.
+      check [flutter_web_cos_upload_plugin](https://pub.flutter-io.cn/packages/flutter_web_cos_upload_plugin)
+      for how to use it 

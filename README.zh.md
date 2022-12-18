@@ -35,11 +35,16 @@ flutter pub run flutter_web_optimizer plugin --path scripts/test_plugin.dart
 ```shell
 flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin scripts/test_plugin.dart
 ```
+
 or
+
 ```shell
 flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.93:9091/app/ --plugin flutter_web_cos_upload_plugin
 ```
 
 - `asset-base`参数必传，一般是文件服务器上存储对应资源文件的地址，**地址必须是/结尾**
 - `web-output`参数非必传，指`flutter web build`的打包产物的文件夹位置，以当前命令行窗口为根路径，默认是`build/web`。
-- `plugin`参数非必传，指插件文件位置，若需要将资源文件上传至服务器，则必传。[cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart)文件已经实现了一套将资源文件上传至腾讯的cos的功能，可以参考。
+- `plugin`参数非必传，若需要将资源文件上传至服务器，则必传。该参数支持文件模式和插件模式两种模式，
+    - 文件模式：指插件的文件位置，以当前命令行窗口为根路径。[cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart)
+      文件已经实现了一套将资源文件上传至腾讯的cos的功能，可以参考。
+    - 插件模式：指插件的名称，用法参考[flutter_web_cos_upload_plugin](https://pub.flutter-io.cn/packages/flutter_web_cos_upload_plugin) 插件
