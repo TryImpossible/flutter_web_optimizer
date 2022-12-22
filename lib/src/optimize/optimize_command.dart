@@ -147,8 +147,9 @@ class OptimizeCommand extends Command<void> {
     final String? webOutput = argResults!['web-output'];
     if (webOutput?.isNotEmpty ?? false) {
       _webOutput = path.join(path.context.current, webOutput!);
+    } else {
+      _webOutput = path.join(path.context.current, 'build', 'web');
     }
-    _webOutput = path.join(path.context.current, 'build', 'web');
 
     /// plugin 文件路径，支持处理资源上传cdn等操作
     final String? plugin = argResults!['plugin'];
