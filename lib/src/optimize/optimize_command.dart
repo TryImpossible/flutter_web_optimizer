@@ -279,7 +279,11 @@ class OptimizeCommand extends Command<void> {
 
   /// 替换 flutter.js
   void _replaceFlutterJS() {
-    File('$_webOutput/flutter.js').writeAsStringSync(flutterJSSourceCode);
+    final File file = File('$_webOutput/flutter.js');
+    if (!file.existsSync()) {
+      file.createSync();
+    }
+    file.writeAsStringSync(flutterJSSourceCode);
   }
 
   /// md5文件
@@ -308,11 +312,10 @@ class OptimizeCommand extends Command<void> {
     ) {
       // 文件名使用hash值
       final String filename = _md5File(file);
+      // 此时key已经是 posix 平台的分隔符 /
       // 统一将路径分隔符修改成 / ，assetManifest 和 fontManifest 使用的是 posix 平台的分隔符 /
-      key = path.toUri(key).toString();
-      final String dirname = path.dirname(key);
-      String newKey = path.join(dirname, filename);
-      newKey = path.toUri(newKey).toString();
+      final String dirname = path.posix.dirname(key);
+      final String newKey = path.posix.join(dirname, filename);
 
       // hash文件路径
       final String newPath = path.join(path.dirname(file.path), filename);
@@ -331,7 +334,9 @@ class OptimizeCommand extends Command<void> {
         .whereType<File>() // 文件类型
         .where((File file) => !path.basename(file.path).startsWith('.'))
         .forEach((File file) {
-      final String key = path.relative(file.path, from: _webOutput);
+      // 使用 posix 平台的分隔符 /
+      String key = path.relative(file.path, from: _webOutput);
+      key = path.toUri(key).toString();
       // 替换 manifest.json 清单文件
       manifestContents = manifestContents.replaceFirstMapped(
         RegExp('(.*)($key)(.*)'),
@@ -357,7 +362,9 @@ class OptimizeCommand extends Command<void> {
         .whereType<File>() // 文件类型
         .where((File file) => !path.basename(file.path).startsWith('.'))
         .forEach((File file) {
-      final String key = path.relative(file.path, from: assetsDir.path);
+      // 使用 posix 平台的分隔符 /
+      String key = path.relative(file.path, from: assetsDir.path);
+      key = path.toUri(key).toString();
       // 替换资源清单文件
       assetManifestContents = assetManifestContents.replaceFirstMapped(
         RegExp('(.*)($key)(.*)'),
