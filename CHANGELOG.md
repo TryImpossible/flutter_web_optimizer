@@ -1,3 +1,7 @@
+## 1.1.5
+
+- command support windows platform
+
 ## 1.1.4
 
 - export window.hashFileManifest global variable
