@@ -2,14 +2,18 @@
 
 ## 功能
 
+![app_web_optimizer](https://github.com/TryImpossible/flutter_web_optimizer/raw/main/20230111-172132.png)
+
 - 通过大文件分片和资源文件cdn化方式，优化`flutter web`页面加载慢问题。
 - 通过资源文件hash化，解决浏览器强缓存导致功能无法更新问题。
 
 ## 开始
 
+在工程的`pubspec.yaml`文件中添加`flutter_web_optimizer`插件
+
 ```yaml
 dev_dependencies:
-  flutter_web_optimizer: ^1.0.0
+  flutter_web_optimizer: ^1.1.5
 ```
 
 ## 用法

@@ -6,6 +6,8 @@ A optimization tools for flutter web，solved web page loading slow and browser 
 
 ## Features
 
+![app_web_optimizer](https://github.com/TryImpossible/flutter_web_optimizer/raw/main/20230111-172132.png)
+
 - split large file and cdn resource file，optimize web page loading slow.
 - hashed resource file，solve browser cache problem.
 
@@ -13,7 +15,7 @@ A optimization tools for flutter web，solved web page loading slow and browser 
 
 ```yaml
 dev_dependencies:
-  flutter_web_optimizer: ^1.0.0
+  flutter_web_optimizer: ^1.1.5
 ```
 
 ## Usage
