@@ -1,3 +1,10 @@
+## 1.1.6
+
+- link external js and css files when using video_player、fluttertoast and other plugin，also support
+  use hashed files
+- support flutter_svg plugin use hashed svg resources
+- `example` project introduce the supported features
+
 ## 1.1.5
 
 - command support windows platform
