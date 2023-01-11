@@ -346,6 +346,9 @@ class OptimizeCommand extends Command<void> {
     // 写入修改后的 manifest.json 清单文件
     manifest.writeAsStringSync(manifestContents);
 
+    // 需要修正源码中关联的文件引用
+    final Map<String, File> amendSourceCodeRelatedFiles = <String, File>{};
+
     // 读取资源清单文件
     final File assetManifest =
         File(path.join(_webOutput, 'assets', 'AssetManifest.json'));
@@ -375,6 +378,11 @@ class OptimizeCommand extends Command<void> {
         RegExp('(.*)($key)(.*)'),
         (Match match) => replace(match, file, key, _hashFiles),
       );
+
+      if (<String>['.svg'].contains(path.extension(file.path))) {
+        // 针对flutter_svg插件使用svg文件的特殊处理
+        amendSourceCodeRelatedFiles[key] = file;
+      }
     });
 
     // 写入修改后的资源、字体清单文件
@@ -385,19 +393,28 @@ class OptimizeCommand extends Command<void> {
     String assetManifestFileName = 'AssetManifest.json';
     final File assetManifestFile =
         File(path.join(_webOutput, 'assets', assetManifestFileName));
-    assetManifestFileName = _md5File(assetManifestFile);
-    _hashFiles[assetManifestFile.path] =
-        path.join(path.dirname(assetManifestFile.path), assetManifestFileName);
+    amendSourceCodeRelatedFiles[assetManifestFileName] = assetManifestFile;
 
     // 将FontManifest.json进行md5
     String fontManifestFileName = 'FontManifest.json';
     final File fontManifestFile =
         File(path.join(_webOutput, 'assets', fontManifestFileName));
-    fontManifestFileName = _md5File(fontManifestFile);
-    _hashFiles[fontManifestFile.path] =
-        path.join(path.dirname(fontManifestFile.path), fontManifestFileName);
+    amendSourceCodeRelatedFiles[fontManifestFileName] = fontManifestFile;
 
-    /// 遍历构建产物根目录
+    // 需要修正源码中关联的字符串引用
+    final Map<String, String> amendSourceCodeRelatedStrings =
+        <String, String>{};
+    amendSourceCodeRelatedFiles.forEach((String key, File value) {
+      String newKey = key.replaceFirstMapped(
+        RegExp('(.*)($key)(.*)'),
+        (Match match) => replace(match, value, key, _hashFiles),
+      );
+      if (newKey.startsWith('./')) {
+        newKey = newKey.substring(1);
+      }
+      amendSourceCodeRelatedStrings[key] = newKey;
+    });
+
     Directory(_webOutput).listSync().whereType<File>() // 文件类型
         .where((File file) {
       final String filename = path.basename(file.path);
@@ -406,13 +423,13 @@ class OptimizeCommand extends Command<void> {
           .hasMatch(filename);
     }).forEach((File file) {
       final String basename = path.basename(file.path);
-      if (RegExp(r'^main\.dart_(\d)\.js$').hasMatch(basename)) {
-        // 查找 main.dart.js 的分片文件 main.dart_xxx.js
-        // 修正 AssetManifest.json 和 FontManifest.json 文件在源码中的引用
-        String contents = file
-            .readAsStringSync()
-            .replaceAll(RegExp(r'AssetManifest.json'), assetManifestFileName)
-            .replaceAll(RegExp(r'FontManifest.json'), fontManifestFileName);
+      if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(basename)) {
+        // 查找 main.dart_xxx.js 和 main.dart.xxx.part.js 文件
+        // 修正修正源码中关联的字符串引用
+        String contents = file.readAsStringSync();
+        amendSourceCodeRelatedStrings.forEach((String key, String value) {
+          contents = contents.replaceAll(RegExp(key), value);
+        });
         file.writeAsStringSync(contents);
       }
       final String filename = _md5File(file);
@@ -515,7 +532,7 @@ class OptimizeCommand extends Command<void> {
       /// 注入 flutter_web_optimizer.js script
       final Element script = Element.tag('script');
       script.attributes['src'] = 'flutter_web_optimizer.js';
-      script.attributes['defer'] = 'true';
+      script.attributes['defer'] = '';
 
       final List<Element> scripts = document.getElementsByTagName('script');
       if (scripts.length > 1) {
@@ -529,11 +546,15 @@ class OptimizeCommand extends Command<void> {
     }
 
     /// 替换哈希后的文件
-    String replace(String key) {
+    String replace(String key, {bool isAbsolute = true}) {
       if (key.isEmpty || !_hashFileManifest.containsKey(key)) {
         return key;
       }
-      return '$_assetBase${_hashFileManifest[key]}';
+      if (isAbsolute) {
+        return '$_assetBase${_hashFileManifest[key]}';
+      } else {
+        return _hashFileManifest[key]!;
+      }
     }
 
     // 查找所有元素
@@ -541,7 +562,8 @@ class OptimizeCommand extends Command<void> {
     for (final Element element in elements) {
       if (element.attributes.containsKey('href')) {
         String href = element.attributes['href']!;
-        href = replace(href);
+        final bool isAbsolute = !<String>['manifest.json'].contains(href);
+        href = replace(href, isAbsolute: isAbsolute);
         element.attributes['href'] = href;
       }
       if (element.attributes.containsKey('src')) {

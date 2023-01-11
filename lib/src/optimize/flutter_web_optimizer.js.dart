@@ -20,8 +20,11 @@ const String flutterWebOptimizerSourceCode = r'''
           },
           set: function (v) {
             value = v;
+            if (v.startsWith('./')) {
+              v = v.replace('./', '');
+            }
             if (hashFileManifest[v]) {
-              value = hashFileManifest[v];
+              value = assetBase + hashFileManifest[v];
             }
             element.setAttribute(property, value);
           }
@@ -52,18 +55,18 @@ const String flutterWebOptimizerSourceCode = r'''
 
     // load main.dart.js_xxx.part js
     function dartDeferredLibraryLoader(uri, successCallback, errorCallback, loadId) {
-      console.log(`uri: ${uri}, loadId: ${loadId}`);
-      let src;
+      console.info('uri: ' + uri + ', loadId: '+ loadId);
+      var src;
       try {
-        const url = new URL(uri);
-        const key = url.pathname.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
-        src = `${assetBase}${mainjsManifest[key]}`;
+        var url = new URL(uri);
+        var key = url.pathname.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
+        src = assetBase + mainjsManifest[key];
       } catch (e) {
-        const key = uri.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
-        src = `${assetBase}${mainjsManifest[key]}`;
+        var key = uri.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
+        src = assetBase + mainjsManifest[key];
       }
-      
-      script = document.createElement("script");
+    
+      var script = document.createElement("script");
       script.type = "text/javascript";
       script.src = src;
       script.addEventListener("load", successCallback, false);
