@@ -1,3 +1,7 @@
+## 1.1.7
+
+- fix bug
+
 ## 1.1.6
 
 - link external js and css files when using video_player、fluttertoast and other plugin，also support
