@@ -84,18 +84,15 @@ class OptimizeCommand extends Command<void> {
       exit(2);
     }
 
-    final File mainDartJsFile = outputDir
-        .listSync()
-        .whereType<File>()
-        .singleWhere(
-            (File entity) => path.basename(entity.path) == 'main.dart.js');
-    await _splitMainDartJS(mainDartJsFile);
+    await _splitMainDartJS(outputDir);
 
     _replaceFlutterJS();
 
     _hashAssets();
 
     _importFlutterWebOptimizerJS();
+
+    // _updateFlutterServiceWorkerJS();
 
     _injectToHtml();
 
@@ -223,7 +220,7 @@ class OptimizeCommand extends Command<void> {
   }
 
   /// 拆分 main.dart.js
-  Future<void> _splitMainDartJS(File file) async {
+  Future<void> _splitMainDartJS(Directory outputDir) async {
     // 写入单个文件
     Future<bool> writeSingleFile({
       required File file,
@@ -256,6 +253,8 @@ class OptimizeCommand extends Command<void> {
       return completer.future;
     }
 
+    final File file = outputDir.listSync().whereType<File>().singleWhere(
+        (File entity) => path.basename(entity.path) == 'main.dart.js');
     const int totalChunk = 6;
     final Uint8List bytes = file.readAsBytesSync();
     final int chunkSize = (bytes.length / totalChunk).ceil();
@@ -324,117 +323,130 @@ class OptimizeCommand extends Command<void> {
       return '${match[1]}$newKey${match[3]}';
     }
 
-    // 读取 manifest.json 清单文件
-    final File manifest = File(path.join(_webOutput, 'manifest.json'));
-    String manifestContents = manifest.readAsStringSync();
-    // 遍历构建产物icons目录
-    final Directory iconsDir = Directory(path.join(_webOutput, 'icons'));
-    iconsDir
-        .listSync()
-        .whereType<File>() // 文件类型
-        .where((File file) => !path.basename(file.path).startsWith('.'))
-        .forEach((File file) {
-      // 使用 posix 平台的分隔符 /
-      String key = path.relative(file.path, from: _webOutput);
-      key = path.toUri(key).toString();
-      // 替换 manifest.json 清单文件
-      manifestContents = manifestContents.replaceFirstMapped(
-        RegExp('(.*)($key)(.*)'),
-        (Match match) => replace(match, file, key, _hashFiles),
-      );
-    });
-    // 写入修改后的 manifest.json 清单文件
-    manifest.writeAsStringSync(manifestContents);
+    /// hash化icons目录
+    void hashIconsDir() {
+      // 读取 manifest.json 清单文件
+      final File manifest = File(path.join(_webOutput, 'manifest.json'));
+      String manifestContents = manifest.readAsStringSync();
+      // 遍历构建产物icons目录
+      final Directory iconsDir = Directory(path.join(_webOutput, 'icons'));
+      iconsDir
+          .listSync()
+          .whereType<File>() // 文件类型
+          .where((File file) => !path.basename(file.path).startsWith('.'))
+          .forEach((File file) {
+        // 使用 posix 平台的分隔符 /
+        String key = path.relative(file.path, from: _webOutput);
+        key = path.toUri(key).toString();
+        // 替换 manifest.json 清单文件
+        manifestContents = manifestContents.replaceFirstMapped(
+          RegExp('(.*)($key)(.*)'),
+          (Match match) => replace(match, file, key, _hashFiles),
+        );
+      });
+      // 写入修改后的 manifest.json 清单文件
+      manifest.writeAsStringSync(manifestContents);
+    }
+
+    /// hash化assets目录
+    void hashAssetsDir(Map<String, File> files) {
+      // 读取资源清单文件
+      final File assetManifest =
+          File(path.join(_webOutput, 'assets', 'AssetManifest.json'));
+      String assetManifestContents = assetManifest.readAsStringSync();
+      // 读取字体清单文件
+      final File fontManifest =
+          File(path.join(_webOutput, 'assets', 'FontManifest.json'));
+      String fontManifestContents = fontManifest.readAsStringSync();
+
+      // 遍历构建产物assets目录，对资源文件md5后获取哈希值，并修改资源、字体清单文件
+      final Directory assetsDir = Directory(path.join(_webOutput, 'assets'));
+      assetsDir
+          .listSync(recursive: true)
+          .whereType<File>() // 文件类型
+          .where((File file) => !path.basename(file.path).startsWith('.'))
+          .forEach((File file) {
+        // 使用 posix 平台的分隔符 /
+        String key = path.relative(file.path, from: assetsDir.path);
+        key = path.toUri(key).toString();
+        // 替换资源清单文件
+        assetManifestContents = assetManifestContents.replaceFirstMapped(
+          RegExp('(.*)($key)(.*)'),
+          (Match match) => replace(match, file, key, _hashFiles),
+        );
+        // 替换字体清单文件
+        fontManifestContents = fontManifestContents.replaceAllMapped(
+          RegExp('(.*)($key)(.*)'),
+          (Match match) => replace(match, file, key, _hashFiles),
+        );
+
+        if (<String>['.svg'].contains(path.extension(file.path))) {
+          // 针对flutter_svg插件使用svg文件的特殊处理
+          files[key] = file;
+        }
+      });
+
+      // 写入修改后的资源、字体清单文件
+      assetManifest.writeAsStringSync(assetManifestContents);
+      fontManifest.writeAsStringSync(fontManifestContents);
+    }
+
+    /// 修正源码引用
+    void amendSourceCode(Map<String, File> amendSourceCodeRelatedFiles) {
+      // 将AssetManifest.json文件进行md5
+      String assetManifestFileName = 'AssetManifest.json';
+      final File assetManifestFile =
+          File(path.join(_webOutput, 'assets', assetManifestFileName));
+      amendSourceCodeRelatedFiles[assetManifestFileName] = assetManifestFile;
+
+      // 将FontManifest.json进行md5
+      String fontManifestFileName = 'FontManifest.json';
+      final File fontManifestFile =
+          File(path.join(_webOutput, 'assets', fontManifestFileName));
+      amendSourceCodeRelatedFiles[fontManifestFileName] = fontManifestFile;
+
+      // 需要修正源码中关联的字符串引用
+      final Map<String, String> amendSourceCodeRelatedStrings =
+          <String, String>{};
+      amendSourceCodeRelatedFiles.forEach((String key, File value) {
+        String newKey = key.replaceFirstMapped(
+          RegExp('(.*)($key)(.*)'),
+          (Match match) => replace(match, value, key, _hashFiles),
+        );
+        if (newKey.startsWith('./')) {
+          newKey = newKey.substring(2);
+        }
+        amendSourceCodeRelatedStrings[key] = newKey;
+      });
+
+      Directory(_webOutput).listSync().whereType<File>() // 文件类型
+          .where((File file) {
+        final String filename = path.basename(file.path);
+        return RegExp(
+                r'(main\.dart(.*)\.js)|(favicon.png)|(flutter.js)|(manifest.json)')
+            .hasMatch(filename);
+      }).forEach((File file) {
+        final String basename = path.basename(file.path);
+        if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(basename)) {
+          // 查找 main.dart_xxx.js 和 main.dart.xxx.part.js 文件
+          // 修正修正源码中关联的字符串引用
+          String contents = file.readAsStringSync();
+          amendSourceCodeRelatedStrings.forEach((String key, String value) {
+            contents = contents.replaceAll(RegExp(key), value);
+          });
+          file.writeAsStringSync(contents);
+        }
+        final String filename = _md5File(file);
+        _hashFiles[file.path] = path.join(path.dirname(file.path), filename);
+      });
+    }
 
     // 需要修正源码中关联的文件引用
     final Map<String, File> amendSourceCodeRelatedFiles = <String, File>{};
 
-    // 读取资源清单文件
-    final File assetManifest =
-        File(path.join(_webOutput, 'assets', 'AssetManifest.json'));
-    String assetManifestContents = assetManifest.readAsStringSync();
-    // 读取字体清单文件
-    final File fontManifest =
-        File(path.join(_webOutput, 'assets', 'FontManifest.json'));
-    String fontManifestContents = fontManifest.readAsStringSync();
-
-    // 遍历构建产物assets目录，对资源文件md5后获取哈希值，并修改资源、字体清单文件
-    final Directory assetsDir = Directory(path.join(_webOutput, 'assets'));
-    assetsDir
-        .listSync(recursive: true)
-        .whereType<File>() // 文件类型
-        .where((File file) => !path.basename(file.path).startsWith('.'))
-        .forEach((File file) {
-      // 使用 posix 平台的分隔符 /
-      String key = path.relative(file.path, from: assetsDir.path);
-      key = path.toUri(key).toString();
-      // 替换资源清单文件
-      assetManifestContents = assetManifestContents.replaceFirstMapped(
-        RegExp('(.*)($key)(.*)'),
-        (Match match) => replace(match, file, key, _hashFiles),
-      );
-      // 替换字体清单文件
-      fontManifestContents = fontManifestContents.replaceAllMapped(
-        RegExp('(.*)($key)(.*)'),
-        (Match match) => replace(match, file, key, _hashFiles),
-      );
-
-      if (<String>['.svg'].contains(path.extension(file.path))) {
-        // 针对flutter_svg插件使用svg文件的特殊处理
-        amendSourceCodeRelatedFiles[key] = file;
-      }
-    });
-
-    // 写入修改后的资源、字体清单文件
-    assetManifest.writeAsStringSync(assetManifestContents);
-    fontManifest.writeAsStringSync(fontManifestContents);
-
-    // 将AssetManifest.json文件进行md5
-    String assetManifestFileName = 'AssetManifest.json';
-    final File assetManifestFile =
-        File(path.join(_webOutput, 'assets', assetManifestFileName));
-    amendSourceCodeRelatedFiles[assetManifestFileName] = assetManifestFile;
-
-    // 将FontManifest.json进行md5
-    String fontManifestFileName = 'FontManifest.json';
-    final File fontManifestFile =
-        File(path.join(_webOutput, 'assets', fontManifestFileName));
-    amendSourceCodeRelatedFiles[fontManifestFileName] = fontManifestFile;
-
-    // 需要修正源码中关联的字符串引用
-    final Map<String, String> amendSourceCodeRelatedStrings =
-        <String, String>{};
-    amendSourceCodeRelatedFiles.forEach((String key, File value) {
-      String newKey = key.replaceFirstMapped(
-        RegExp('(.*)($key)(.*)'),
-        (Match match) => replace(match, value, key, _hashFiles),
-      );
-      if (newKey.startsWith('./')) {
-        newKey = newKey.substring(1);
-      }
-      amendSourceCodeRelatedStrings[key] = newKey;
-    });
-
-    Directory(_webOutput).listSync().whereType<File>() // 文件类型
-        .where((File file) {
-      final String filename = path.basename(file.path);
-      return RegExp(
-              r'(main\.dart(.*)\.js)|(favicon.png)|(flutter.js)|(manifest.json)')
-          .hasMatch(filename);
-    }).forEach((File file) {
-      final String basename = path.basename(file.path);
-      if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(basename)) {
-        // 查找 main.dart_xxx.js 和 main.dart.xxx.part.js 文件
-        // 修正修正源码中关联的字符串引用
-        String contents = file.readAsStringSync();
-        amendSourceCodeRelatedStrings.forEach((String key, String value) {
-          contents = contents.replaceAll(RegExp(key), value);
-        });
-        file.writeAsStringSync(contents);
-      }
-      final String filename = _md5File(file);
-      _hashFiles[file.path] = path.join(path.dirname(file.path), filename);
-    });
+    hashIconsDir();
+    hashAssetsDir(amendSourceCodeRelatedFiles);
+    amendSourceCode(amendSourceCodeRelatedFiles);
 
     // 重命名文件
     _hashFiles.forEach((String key, String value) {
@@ -444,43 +456,51 @@ class OptimizeCommand extends Command<void> {
 
   /// 导入flutter_web_optimizer.js
   void _importFlutterWebOptimizerJS() {
+    /// 排序后生成 _hashFileManifest 和 jsManifest
+    void getManifestValue(Map<String, String> jsManifest) {
+      _hashFiles.keys.toList()
+        ..sort()
+        ..forEach((String key) {
+          String filepath =
+              path.toUri(path.relative(key, from: _webOutput)).toString();
+          String hashedFilePath = path
+              .toUri(path.relative(_hashFiles[key]!, from: _webOutput))
+              .toString();
+          _hashFileManifest[filepath] = hashedFilePath;
+          final String filename = path.basename(key);
+          if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(filename)) {
+            jsManifest[filename] = path.basename(_hashFiles[key]!);
+          }
+        });
+    }
+
+    /// 修正flutter_web_optimizer.js源码
+    File amendSourceCode(Map<String, String> jsManifest) {
+      // 更新 assetBase、mainjsManifest 和 hashFileManifest
+      const JsonEncoder jsonEncoder = JsonEncoder.withIndent('  ');
+      final String flutterWebOptimizer = flutterWebOptimizerSourceCode
+          .replaceAll(
+            RegExp('var assetBase = null;'),
+            'var assetBase = "$_assetBase";',
+          )
+          .replaceAll(
+            RegExp('var mainjsManifest = null;'),
+            'var mainjsManifest = ${jsonEncoder.convert(jsManifest)};',
+          )
+          .replaceAll(
+            RegExp('var hashFileManifest = null;'),
+            'var hashFileManifest = ${jsonEncoder.convert(_hashFileManifest)};',
+          );
+      final File file = File('$_webOutput/flutter_web_optimizer.js')
+        ..createSync()
+        ..writeAsStringSync(flutterWebOptimizer);
+      return file;
+    }
+
     // 哈希化后的main.dart.js && main.dart.xxx.part文件
     final Map<String, String> jsManifest = <String, String>{};
-
-    // 排序后生成 _hashFileManifest 和 jsManifest
-    _hashFiles.keys.toList()
-      ..sort()
-      ..forEach((String key) {
-        String filepath =
-            path.toUri(path.relative(key, from: _webOutput)).toString();
-        String hashedFilePath = path
-            .toUri(path.relative(_hashFiles[key]!, from: _webOutput))
-            .toString();
-        _hashFileManifest[filepath] = hashedFilePath;
-        final String filename = path.basename(key);
-        if (RegExp(r'^main\.dart(.*)\.js$').hasMatch(filename)) {
-          jsManifest[filename] = path.basename(_hashFiles[key]!);
-        }
-      });
-
-    // 更新 assetBase、mainjsManifest 和 hashFileManifest
-    const JsonEncoder jsonEncoder = JsonEncoder.withIndent('  ');
-    final String flutterWebOptimizer = flutterWebOptimizerSourceCode
-        .replaceAll(
-          RegExp('var assetBase = null;'),
-          'var assetBase = "$_assetBase";',
-        )
-        .replaceAll(
-          RegExp('var mainjsManifest = null;'),
-          'var mainjsManifest = ${jsonEncoder.convert(jsManifest)};',
-        )
-        .replaceAll(
-          RegExp('var hashFileManifest = null;'),
-          'var hashFileManifest = ${jsonEncoder.convert(_hashFileManifest)};',
-        );
-    final File file = File('$_webOutput/flutter_web_optimizer.js')
-      ..createSync()
-      ..writeAsStringSync(flutterWebOptimizer);
+    getManifestValue(jsManifest);
+    final File file = amendSourceCode(jsManifest);
 
     // 哈希flutter_web_optimizer.js文件
     final String fileName = _md5File(file);
@@ -496,52 +516,97 @@ class OptimizeCommand extends Command<void> {
     _hashFileManifest[filepath] = hashedFilePath;
   }
 
+  // /// 更新flutter_service_worker.js
+  // void _updateFlutterServiceWorkerJS() {
+  //   final File file = File(path.join(_webOutput, 'flutter_service_worker.js'));
+  //   if (!file.existsSync()) {
+  //     return;
+  //   }
+  //   String contents = file.readAsStringSync();
+  //   if (contents.isEmpty) {
+  //     return;
+  //   }
+  //   final List<String> mainDartJSList = <String>[];
+  //   _hashFileManifest.keys.toList()
+  //     ..sort()
+  //     ..forEach((String key) {
+  //       final String value = _hashFileManifest[key]!;
+  //       contents = contents.replaceAll(RegExp('"$key"'), '"$value"');
+  //
+  //       final String filename = path.basename(key);
+  //       if (RegExp(r'^main\.dart_(\d)\.js$').hasMatch(filename)) {
+  //         mainDartJSList.add(value);
+  //       }
+  //     });
+  //   mainDartJSList.add('flutter_web_optimizer.1a745d4a.js');
+  //   contents = contents
+  //       .replaceAll(
+  //         RegExp('"main.dart.js": (.+),'),
+  //         mainDartJSList
+  //             .map((String js) {
+  //               final String md5String = crypto.md5
+  //                   .convert(File(path.join(_webOutput, js)).readAsBytesSync())
+  //                   .toString();
+  //               return '"$js": "$md5String",';
+  //             })
+  //             .toList()
+  //             .join('\n'),
+  //       )
+  //       .replaceAll(
+  //         '"main.dart.js",',
+  //         mainDartJSList.map((String js) => '"$js",').toList().join('\n'),
+  //       );
+  //   file.writeAsStringSync(contents);
+  // }
+
   /// 修改 index.html
   void _injectToHtml() {
-    /// 读取index.html
-    final File file = File('$_webOutput/index.html');
-    String contents = file.readAsStringSync();
+    /// 注入 assetBase meta 标签
+    void injectAssetBaseMeta({
+      required Document document,
+      required Element? headElement,
+    }) {
+      if (headElement != null) {
+        void injectAssetBaseMeta(Element element) {
+          final Element meta = Element.tag('meta');
+          meta.attributes['name'] = 'assetBase';
+          meta.attributes['content'] = _assetBase;
 
-    /// 解析 index.html 为 Document
-    final Document document = parse(contents);
+          element.append(Text('\n'));
+          element.append(Comment('content值必须以 / 结尾'));
+          element.append(Text('\n'));
+          element.append(meta);
+          element.append(Text('\n'));
+        }
 
-    final Element? headElement = document.head;
-    if (headElement != null) {
-      /// 注入 assetBase meta 标签
-      void injectAssetBaseMeta(Element element) {
-        final Element meta = Element.tag('meta');
-        meta.attributes['name'] = 'assetBase';
-        meta.attributes['content'] = _assetBase;
-
-        element.append(Text('\n'));
-        element.append(Comment('content值必须以 / 结尾'));
-        element.append(Text('\n'));
-        element.append(meta);
-        element.append(Text('\n'));
-      }
-
-      final List<Element> metas = document.getElementsByTagName('meta');
-      if (metas.isNotEmpty) {
-        injectAssetBaseMeta(metas.last);
-      } else {
-        injectAssetBaseMeta(headElement);
+        final List<Element> metas = document.getElementsByTagName('meta');
+        if (metas.isNotEmpty) {
+          injectAssetBaseMeta(metas.last);
+        } else {
+          injectAssetBaseMeta(headElement);
+        }
       }
     }
 
-    if (headElement != null) {
-      /// 注入 flutter_web_optimizer.js script
-      final Element script = Element.tag('script');
-      script.attributes['src'] = 'flutter_web_optimizer.js';
-      script.attributes['defer'] = '';
+    /// 注入 flutter_web_optimizer.js script
+    void injectFlutterWebOptimizerScript({
+      required Document document,
+      required Element? headElement,
+    }) {
+      if (headElement != null) {
+        final Element script = Element.tag('script');
+        script.attributes['src'] = 'flutter_web_optimizer.js';
+        script.attributes['defer'] = '';
 
-      final List<Element> scripts = document.getElementsByTagName('script');
-      if (scripts.length > 1) {
-        final Element firstScript = scripts.first;
-        headElement.insertBefore(script, firstScript);
-        headElement.insertBefore(Text('\n'), firstScript);
-      } else {
-        headElement.append(script);
-        headElement.append(Text('\n'));
+        final List<Element> scripts = document.getElementsByTagName('script');
+        if (scripts.length > 1) {
+          final Element firstScript = scripts.first;
+          headElement.insertBefore(script, firstScript);
+          headElement.insertBefore(Text('\n'), firstScript);
+        } else {
+          headElement.append(script);
+          headElement.append(Text('\n'));
+        }
       }
     }
 
@@ -557,12 +622,31 @@ class OptimizeCommand extends Command<void> {
       }
     }
 
+    /// 读取index.html
+    final File file = File('$_webOutput/index.html');
+    String contents = file.readAsStringSync();
+
+    /// 解析 index.html 为 Document
+    final Document document = parse(contents);
+
+    final Element? headElement = document.head;
+
+    injectAssetBaseMeta(document: document, headElement: headElement);
+    injectFlutterWebOptimizerScript(
+      document: document,
+      headElement: headElement,
+    );
+
     // 查找所有元素
     final List<Element> elements = document.querySelectorAll('*');
     for (final Element element in elements) {
       if (element.attributes.containsKey('href')) {
         String href = element.attributes['href']!;
-        final bool isAbsolute = !<String>['manifest.json'].contains(href);
+        final bool isAbsolute = !<String>[
+          'icons/Icon-192.png',
+          'favicon.png',
+          'manifest.json',
+        ].contains(href);
         href = replace(href, isAbsolute: isAbsolute);
         element.attributes['href'] = href;
       }
