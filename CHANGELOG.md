@@ -1,3 +1,7 @@
+## 1.1.8
+
+- insert `//@ sourceURL=main.dart.js` mark for debugging
+
 ## 1.1.7
 
 - fix bug

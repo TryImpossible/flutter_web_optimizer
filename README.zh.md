@@ -13,7 +13,7 @@
 
 ```yaml
 dev_dependencies:
-  flutter_web_optimizer: ^1.1.5
+  flutter_web_optimizer: ^1.1.8
 ```
 
 ## 用法
