@@ -21,3 +21,5 @@
 
 # Conventional directory for build output.
 build/
+
+private/
