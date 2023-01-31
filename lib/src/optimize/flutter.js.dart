@@ -110,7 +110,7 @@ _flutter.loader = null;
               element.style.display = "block";
               element.style.color = "#f89800";
               element.innerText = "加载失败，点击重新请求页面";
-              document.body.appendChild(a);
+              document.body.appendChild(element);
             } else {
               this._loadEntrypoint(entrypointUrl);
             }
