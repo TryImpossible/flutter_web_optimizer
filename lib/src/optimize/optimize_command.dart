@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:args/command_runner.dart';
 import 'package:crypto/crypto.dart' as crypto;
+import 'package:flutter_web_optimizer/src/optimize/flutter_service_worker.js.dart';
 import 'package:flutter_web_optimizer/src/optimize/flutter_web_optimizer.js.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' show parse;
@@ -35,6 +36,11 @@ class OptimizeCommand extends Command<void> {
         help: 'plugin file path，'
             'only support relative path，root path is [path.context.current]，'
             'eq：flutter_web_optimize_plugin.dart',
+      )
+      ..addFlag(
+        'enable-pwa',
+        help: 'enable PWA service worker',
+        defaultsTo: true,
       );
   }
 
@@ -94,7 +100,10 @@ class OptimizeCommand extends Command<void> {
 
     _updateSourceMapsMark();
 
-    // _updateFlutterServiceWorkerJS();
+    final bool enablePWA = argResults!['enable-pwa'];
+    if (enablePWA) {
+      _updateFlutterServiceWorkerJS();
+    }
 
     _injectToHtml();
 
@@ -546,48 +555,83 @@ class OptimizeCommand extends Command<void> {
     });
   }
 
-  // /// 更新flutter_service_worker.js
-  // void _updateFlutterServiceWorkerJS() {
-  //   final File file = File(path.join(_webOutput, 'flutter_service_worker.js'));
-  //   if (!file.existsSync()) {
-  //     return;
-  //   }
-  //   String contents = file.readAsStringSync();
-  //   if (contents.isEmpty) {
-  //     return;
-  //   }
-  //   final List<String> mainDartJSList = <String>[];
-  //   _hashFileManifest.keys.toList()
-  //     ..sort()
-  //     ..forEach((String key) {
-  //       final String value = _hashFileManifest[key]!;
-  //       contents = contents.replaceAll(RegExp('"$key"'), '"$value"');
-  //
-  //       final String filename = path.basename(key);
-  //       if (RegExp(r'^main\.dart_(\d)\.js$').hasMatch(filename)) {
-  //         mainDartJSList.add(value);
-  //       }
-  //     });
-  //   mainDartJSList.add('flutter_web_optimizer.1a745d4a.js');
-  //   contents = contents
-  //       .replaceAll(
-  //         RegExp('"main.dart.js": (.+),'),
-  //         mainDartJSList
-  //             .map((String js) {
-  //               final String md5String = crypto.md5
-  //                   .convert(File(path.join(_webOutput, js)).readAsBytesSync())
-  //                   .toString();
-  //               return '"$js": "$md5String",';
-  //             })
-  //             .toList()
-  //             .join('\n'),
-  //       )
-  //       .replaceAll(
-  //         '"main.dart.js",',
-  //         mainDartJSList.map((String js) => '"$js",').toList().join('\n'),
-  //       );
-  //   file.writeAsStringSync(contents);
-  // }
+  /// 更新flutter_service_worker.js
+  void _updateFlutterServiceWorkerJS() {
+    final File file = File(path.join(_webOutput, 'flutter_service_worker.js'));
+    if (!file.existsSync()) {
+      return;
+    }
+    String contents = file.readAsStringSync();
+    if (contents.isEmpty) {
+      return;
+    }
+    String? resourcesValues = RegExp(r'const RESOURCES = {\n([\s\S]*)\n};')
+        .firstMatch(contents)
+        ?.group(1);
+    if (resourcesValues?.isEmpty ?? true) {
+      return;
+    }
+    String? coreValues = RegExp(r'const CORE = \[\n([\s\S]*?)\];')
+        .firstMatch(contents)
+        ?.group(1);
+    if (coreValues?.isEmpty ?? true) {
+      return;
+    }
+
+    final List<String> insertedJSList = <String>[];
+    _hashFileManifest.keys.where((String key) => key != 'main.dart.js').toList()
+      ..sort()
+      ..forEach((String key) {
+        final String value = _hashFileManifest[key]!;
+        resourcesValues =
+            resourcesValues?.replaceAll(RegExp('"$key"'), '"$value"');
+        coreValues = coreValues?.replaceAll(RegExp('"$key"'), '"$value"');
+
+        final String filename = path.basename(key);
+        if (RegExp(r'^(main\.dart(.*)\.js|flutter_web_optimizer\.js)$')
+            .hasMatch(filename)) {
+          // 收集main.dart.*js和flutter_web_optimizer.js文件
+          insertedJSList.add(value);
+        }
+      });
+    resourcesValues = resourcesValues?.replaceAll(
+        RegExp(r'"main\.dart\.js": (.+),'),
+        insertedJSList
+            .where((String key) => RegExp(
+                    r'^main\.dart_\d(.*)\.js|flutter_web_optimizer\.(.*)\.js$')
+                .hasMatch(key))
+            .map((String js) {
+              final String md5String = crypto.md5
+                  .convert(File(path.join(_webOutput, js)).readAsBytesSync())
+                  .toString();
+              return '"$js": "$md5String",';
+            })
+            .toList()
+            .join('\n'));
+    coreValues = coreValues?.replaceAll(
+      RegExp(r'"main\.dart\.js",'),
+      insertedJSList
+          .where((String key) =>
+              !RegExp(r'^flutter_web_optimizer\.(.*)\.js$').hasMatch(key))
+          .map((String js) => '"$js",')
+          .toList()
+          .join('\n'),
+    );
+    contents = flutterServiceWorkerSourceCode
+        .replaceFirstMapped(
+          RegExp(r'(const RESOURCES = {)(};)'),
+          (m) => '${m[1]}\n$resourcesValues\n${m[2]}',
+        )
+        .replaceAll(
+          RegExp(RegExp.escape('const CORE = [];'), caseSensitive: true),
+          'const CORE = [\n$coreValues\n];',
+        )
+        .replaceAll(
+          RegExp(r'const assetBase = null;'),
+          'var assetBase = "$_assetBase";',
+        );
+    file.writeAsStringSync(contents);
+  }
 
   /// 修改 index.html
   void _injectToHtml() {
