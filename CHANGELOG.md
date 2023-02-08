@@ -1,3 +1,7 @@
+## 1.1.9
+
+- add `--enable-pwa` args enable experimental feature：PWA service worker，default to true
+
 ## 1.1.8
 
 - insert `//@ sourceURL=main.dart.js` mark for debugging
@@ -40,7 +44,7 @@
 - update `plugin` command，allow any plugin name
 - update `optimize` command
     - modify web optimize steps
-    - `--plugin` parameter support file mode and plugin mode
+    - `--plugin` args support file mode and plugin mode
 - update `example` project，test the usage of plugin mode
 
 ## 1.0.1
