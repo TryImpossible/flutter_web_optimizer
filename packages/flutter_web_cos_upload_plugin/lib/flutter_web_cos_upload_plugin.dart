@@ -103,7 +103,7 @@ void _parseYaml() {
   T getValue<T>(dynamic value) {
     if (value is! T) {
       throw Exception(
-          'flutter_web_cos_upload_plugin.yaml incorrect [value] type error !!!');
+          'flutter_web_cos_upload_plugin.yaml incorrect [$value] type error !!!');
     }
     return value;
   }
