@@ -9,7 +9,7 @@ upload flutter web build artifact to tencent cos，such as image，javascript fi
 
 ```yaml
 dev_dependencies:
-  flutter_web_cos_upload_plugin: ^1.0.0
+  flutter_web_cos_upload_plugin: ^1.0.1
 ```
 
 ## Usage
