@@ -55,10 +55,8 @@ dev_dependencies:
   # https://pub.dev/packages/tencent_cos_plus
   tencent_cos_plus: ^1.2.0
 
-  flutter_web_optimizer:
-    path: ../../flutter_web_optimizer
-  flutter_web_cos_upload_plugin:
-    path: ../../flutter_web_optimizer/packages/flutter_web_cos_upload_plugin
+  flutter_web_optimizer: ^1.1.9
+  flutter_web_cos_upload_plugin: ^1.0.2
 
 dependency_overrides:
   path: ^1.8.3
