@@ -56,7 +56,7 @@ jobs:
       - name: Build Flutter Web
         run: |
           cd example
-          flutter build web --web-renderer html --release --base-href /flutter_web_optimizer/
+          flutter build web --web-renderer html --release --source-maps --base-href /flutter_web_optimizer/
           flutter pub run flutter_web_optimizer optimize --asset-base https://tryimpossible.github.io/flutter-diy/flutter-web-optimizer-example-artifact/
 
 #      - name: Replace Href Attribute

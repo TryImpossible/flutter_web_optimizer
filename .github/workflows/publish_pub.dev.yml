@@ -25,17 +25,17 @@ jobs:
           skipTests: true
           format: true
 
-  publish_flutter_web_cos_upload_plugin:
-    runs-on: ubuntu-latest
-    steps:
-      - name: 'checkout code'
-        uses: actions/checkout@main # required!
-
-      - name: '>> publish flutter_web_cos_upload_plugin package to pub.dev <<'
-        uses: k-paxian/dart-package-publisher@master
-        with:
-          accessToken: ${{ secrets.PUB_ACCESS_TOKEN }}
-          refreshToken: ${{ secrets.PUB_REFRESH_TOKEN }}
-          skipTests: true
-          format: true
-          relativePath: packages/flutter_web_cos_upload_plugin
+#  publish_flutter_web_cos_upload_plugin:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: 'checkout code'
+#        uses: actions/checkout@main # required!
+#
+#      - name: '>> publish flutter_web_cos_upload_plugin package to pub.dev <<'
+#        uses: k-paxian/dart-package-publisher@master
+#        with:
+#          accessToken: ${{ secrets.PUB_ACCESS_TOKEN }}
+#          refreshToken: ${{ secrets.PUB_REFRESH_TOKEN }}
+#          skipTests: true
+#          format: true
+#          relativePath: packages/flutter_web_cos_upload_plugin
