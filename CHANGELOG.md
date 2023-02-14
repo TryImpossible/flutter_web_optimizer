@@ -4,10 +4,6 @@
 
 ## 1.1.8
 
-- add `--enable-pwa` args enable experimental feature：PWA service worker，default to true
-
-## 1.1.8
-
 - insert `//@ sourceURL=main.dart.js` mark for debugging
 
 ## 1.1.7
