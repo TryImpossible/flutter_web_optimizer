@@ -1,7 +1,7 @@
 name: flutter_web_cos_upload_plugin
-description: A sample command-line application.
+description: A sub plug-in of flutter_web_optimizer，used to upload resources to cos.
 version: 1.0.0
-# homepage: https://www.example.com
+homepage: https://github.com/TryImpossible/flutter_web_optimizer/tree/main/packages/flutter_web_cos_upload_plugin
 
 environment:
   sdk: '>=2.18.5 <3.0.0'
@@ -16,8 +16,7 @@ dependencies:
   # https://pub.dev/packages/tencent_cos_plus
   tencent_cos_plus: ^1.2.0
   # https://pub.dev/packages/flutter_web_optimizer
-  flutter_web_optimizer:
-    path: ../../../flutter_web_optimizer
+  flutter_web_optimizer: ^1.1.9
 
 dev_dependencies:
   lints: ^2.0.0
