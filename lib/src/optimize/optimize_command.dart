@@ -41,6 +41,10 @@ class OptimizeCommand extends Command<void> {
         'enable-pwa',
         help: 'enable PWA service worker',
         defaultsTo: true,
+      )
+      ..addOption(
+        'hash-filter-regexp',
+        help: 'hash file filter',
       );
   }
 
@@ -59,6 +63,12 @@ class OptimizeCommand extends Command<void> {
 
   /// plugin 文件路径，支持处理资源上传cdn等操作
   late String _plugin;
+
+  /// 是否支持pwa
+  late bool _enablePWA;
+
+  /// 哈希文件筛选器
+  late String _hashFilterRegexp;
 
   /// isolate通信，发送信息
   SendPort? _sendPort;
@@ -100,8 +110,7 @@ class OptimizeCommand extends Command<void> {
 
     _updateSourceMapsMark();
 
-    final bool enablePWA = argResults!['enable-pwa'];
-    if (enablePWA) {
+    if (_enablePWA) {
       _updateFlutterServiceWorkerJS();
     }
 
@@ -148,6 +157,38 @@ class OptimizeCommand extends Command<void> {
   // }
 
   Future<void> _parseArgs() async {
+    Future<void> parsePluginArgs() async {
+      /// plugin 文件路径，支持处理资源上传cdn等操作
+      final String? plugin = argResults!['plugin'];
+      if (plugin?.isEmpty ?? true) {
+        _plugin = '';
+        return;
+      }
+      if (path.extension(plugin!).isNotEmpty) {
+        /// Uri
+        _plugin = path.join(path.context.current, plugin);
+      } else {
+        /// Not Uri
+        final PackageConfig? packageConfig =
+            await findPackageConfig(Directory.current);
+        if (packageConfig == null) {
+          _plugin = '';
+          return;
+        }
+        try {
+          final Package package = packageConfig.packages
+              .singleWhere((Package element) => element.name == plugin);
+          _plugin = path.join(package.packageUriRoot.toFilePath(), plugin);
+          _plugin = path.setExtension(_plugin, '.dart');
+        } catch (_) {
+          _plugin = '';
+        }
+      }
+      if (!File(_plugin).existsSync()) {
+        throw Exception('plugin args is invalid!!!');
+      }
+    }
+
     /// 资源路径，一般是cdn地址
     _assetBase = argResults!['asset-base'] ?? '';
 
@@ -160,34 +201,13 @@ class OptimizeCommand extends Command<void> {
     }
 
     /// plugin 文件路径，支持处理资源上传cdn等操作
-    final String? plugin = argResults!['plugin'];
-    if (plugin?.isEmpty ?? true) {
-      _plugin = '';
-      return;
-    }
-    if (path.extension(plugin!).isNotEmpty) {
-      /// Uri
-      _plugin = path.join(path.context.current, plugin);
-    } else {
-      /// Not Uri
-      final PackageConfig? packageConfig =
-          await findPackageConfig(Directory.current);
-      if (packageConfig == null) {
-        _plugin = '';
-        return;
-      }
-      try {
-        final Package package = packageConfig.packages
-            .singleWhere((Package element) => element.name == plugin);
-        _plugin = path.join(package.packageUriRoot.toFilePath(), plugin);
-        _plugin = path.setExtension(_plugin, '.dart');
-      } catch (_) {
-        _plugin = '';
-      }
-    }
-    if (!File(_plugin).existsSync()) {
-      throw Exception('plugin args is invalid!!!');
-    }
+    await parsePluginArgs();
+
+    /// 是否支持pwa
+    _enablePWA = argResults!['enable-pwa'];
+
+    /// 哈希文件筛选器
+    _hashFilterRegexp = argResults!['hash-filter-regexp'] ?? '';
   }
 
   /// 初始化isolate通信
@@ -313,6 +333,15 @@ class OptimizeCommand extends Command<void> {
     return filename;
   }
 
+  /// 过滤文件是否进行哈希操作
+  /// [path] 文件路径
+  bool _filteringHashFile(String path) {
+    if (_hashFilterRegexp.isEmpty) {
+      return false;
+    }
+    return RegExp(_hashFilterRegexp).hasMatch(path);
+  }
+
   /// 资源hash化
   void _hashAssets() {
     /// 替换
@@ -322,6 +351,9 @@ class OptimizeCommand extends Command<void> {
       String key,
       Map<String, String> hashFiles,
     ) {
+      if (_filteringHashFile(file.path)) {
+        return match[0] ?? '';
+      }
       // 文件名使用hash值
       final String filename = _md5File(file);
       // 此时key已经是 posix 平台的分隔符 /
