@@ -57,7 +57,7 @@ jobs:
         run: |
           cd example
           flutter build web --web-renderer html --release --source-maps --base-href /flutter_web_optimizer/
-          flutter pub run flutter_web_optimizer optimize --asset-base https://tryimpossible.github.io/flutter-diy/flutter-web-optimizer-example-artifact/
+          flutter pub run flutter_web_optimizer optimize --asset-base https://tryimpossible.github.io/flutter-diy/flutter-web-optimizer-example-artifact/ --hash-filter-regexp google_fonts
 
 #      - name: Replace Href Attribute
 #        run: |
