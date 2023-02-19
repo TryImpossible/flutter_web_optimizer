@@ -1,3 +1,7 @@
+## 1.1.10
+
+- add `--hash-filter-regexp` args，support filtering file when hash file
+
 ## 1.1.9
 
 - add `--enable-pwa` args enable experimental feature：PWA service worker，default to true
