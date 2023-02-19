@@ -38,6 +38,7 @@ dependencies:
   video_player: ^2.4.10
   chewie: ^1.3.6
   flutter_svg: ^1.1.6
+  google_fonts: ^4.0.3
 
 dev_dependencies:
   flutter_test:
@@ -55,8 +56,8 @@ dev_dependencies:
   # https://pub.dev/packages/tencent_cos_plus
   tencent_cos_plus: ^1.2.0
 
-  flutter_web_optimizer: ^1.1.9
-  flutter_web_cos_upload_plugin: ^1.0.2
+  flutter_web_optimizer:
+  flutter_web_cos_upload_plugin:
 
 dependency_overrides:
   path: ^1.8.3
@@ -105,3 +106,4 @@ flutter:
   assets:
     - assets/images/
     - assets/svg/
+    - assets/google_fonts/

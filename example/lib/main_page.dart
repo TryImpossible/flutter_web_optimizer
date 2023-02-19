@@ -2,6 +2,7 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:video_player/video_player.dart';
 
 class MainPage extends StatelessWidget {
@@ -29,6 +30,7 @@ class MainPage extends StatelessWidget {
             _SVG(),
             _Video(),
             _Toast(),
+            _GoogleFonts(),
           ],
         ),
       ),
@@ -151,6 +153,29 @@ class _Toast extends StatelessWidget {
       textColor: Colors.white,
       fontSize: 16.0,
       webPosition: 'center',
+    );
+  }
+}
+
+class _GoogleFonts extends StatelessWidget {
+  const _GoogleFonts({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: <Widget>[
+        // const Text('', style: TextStyle(color: Colors.black)),
+        Text(
+          'This is Google Fonts',
+          style: GoogleFonts.inter(
+            textStyle: Theme.of(context).textTheme.headline4,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+      ],
     );
   }
 }
