@@ -19,7 +19,7 @@ import 'src/plugin/plugin_command.dart';
 
 void main(List<String> arguments) {
   CommandRunner(
-      'flutter_web_optimizer', 'an optimization solution for flutter web')
+      'flutter_web_optimizer', 'an optimization tools for flutter web')
     ..addCommand(PluginCommand())
     ..addCommand(OptimizeCommand())
     // ..run(_mockOptimizeCmdArgs);
