@@ -1,3 +1,7 @@
+## 1.1.11
+
+- fix bug
+
 ## 1.1.10
 
 - add `--hash-filter-regexp` args，support filtering file when hash file
