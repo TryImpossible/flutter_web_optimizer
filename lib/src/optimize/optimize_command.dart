@@ -288,9 +288,9 @@ class OptimizeCommand extends Command<void> {
         (File entity) => path.basename(entity.path) == 'main.dart.js');
 
     /// 针对xhr加载动态js文件，插入『@ sourceURL』标记，方便调试
-    file
-        .openSync(mode: FileMode.append)
-        .writeStringSync('\n\n//@ sourceURL=main.dart.js\n');
+    file.openSync(mode: FileMode.append)
+      ..writeStringSync('\n\n//@ sourceURL=main.dart.js\n')
+      ..closeSync();
     const int totalChunk = 6;
     final Uint8List bytes = file.readAsBytesSync();
     final int chunkSize = (bytes.length / totalChunk).ceil();
@@ -464,7 +464,9 @@ class OptimizeCommand extends Command<void> {
         amendSourceCodeRelatedStrings[key] = newKey;
       });
 
-      Directory(_webOutput).listSync().whereType<File>() // 文件类型
+      Directory(_webOutput)
+          .listSync()
+          .whereType<File>() // 文件类型
           .where((File file) {
         final RegExp regExp = RegExp(r'^main\.dart(.*)\.js$');
         final String filename = path.basename(file.path);
@@ -482,7 +484,9 @@ class OptimizeCommand extends Command<void> {
 
     /// hash化web根目录
     void hashWebOutputDir() {
-      Directory(_webOutput).listSync().whereType<File>() // 文件类型
+      Directory(_webOutput)
+          .listSync()
+          .whereType<File>() // 文件类型
           .where((File file) {
         final RegExp regExp = RegExp(
             r'(main\.dart(.*)\.js)|(favicon.png)|(flutter.js)|(manifest.json)');
@@ -573,7 +577,9 @@ class OptimizeCommand extends Command<void> {
   /// 修正//# sourceMappingURL，插入//@ sourceURL
   void _updateSourceMapsMark() {
     String replace(Match m) => '${m[1]}$_assetBase${_hashFileManifest[m[2]]}';
-    Directory(_webOutput).listSync().whereType<File>() // 文件类型
+    Directory(_webOutput)
+        .listSync()
+        .whereType<File>() // 文件类型
         .where((File file) {
       final RegExp regExp = RegExp(r'^main\.dart(.*)\.js$');
       final String filename = path.basename(file.path);
