@@ -20,11 +20,13 @@ const String flutterWebOptimizerSourceCode = r'''
           },
           set: function (v) {
             value = v;
-            if (v.startsWith('./')) {
-              v = v.replace('./', '');
-            }
-            if (hashFileManifest[v]) {
-              value = assetBase + hashFileManifest[v];
+            if (typeof v === 'string') {
+              if (v.startsWith('./')) {
+                v = v.replace('./', '');
+              }
+              if (hashFileManifest[v]) {
+                value = assetBase + hashFileManifest[v];
+              }
             }
             element.setAttribute(property, value);
           }
