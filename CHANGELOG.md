@@ -1,3 +1,7 @@
+## 1.1.12
+
+- fix bug，[issue](https://github.com/TryImpossible/flutter_web_optimizer/issues/15)
+
 ## 1.1.11
 
 - fix bug，[issue](https://github.com/TryImpossible/flutter_web_optimizer/issues/11)
@@ -51,8 +55,8 @@
 
 - update `plugin` command，allow any plugin name
 - update `optimize` command
-  - modify web optimize steps
-  - `--plugin` args support file mode and plugin mode
+    - modify web optimize steps
+    - `--plugin` args support file mode and plugin mode
 - update `example` project，test the usage of plugin mode
 
 ## 1.0.1
