@@ -59,4 +59,6 @@ flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.9
       upload resource file to tencent cos.
     - plugin mode: it's refers to plugin name.
       check [flutter_web_cos_upload_plugin](https://pub.flutter-io.cn/packages/flutter_web_cos_upload_plugin)
-      for how to use it 
+      for how to use it
+- `--enable-pwa`parameter not required，refers to PWA service worker，default to true
+- `--hash-filter-regexp`parameter not required，support filtering file when hash file 

@@ -52,3 +52,5 @@ flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.9
     - 文件模式：指插件的文件位置，以当前命令行窗口为根路径。[cos_upload_plugin.dart](example/scripts/cos_upload_plugin.dart)
       文件已经实现了一套将资源文件上传至腾讯的cos的功能，可以参考。
     - 插件模式：指插件的名称，用法参考[flutter_web_cos_upload_plugin](https://pub.flutter-io.cn/packages/flutter_web_cos_upload_plugin) 插件
+- `--enable-pwa`参数非必传，指 PWA service worker，默认是`true`
+- `--hash-filter-regexp`参数非必传，当进行hash文件操作时提供正则过滤
