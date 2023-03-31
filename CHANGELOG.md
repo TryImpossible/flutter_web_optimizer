@@ -1,3 +1,8 @@
+## 1.2.0
+
+- `flutter.js`compatible with flutter version 3.7
+- `index.html`compatible with flutter version 3.7
+
 ## 1.1.12
 
 - fix bug，[issue](https://github.com/TryImpossible/flutter_web_optimizer/issues/15)

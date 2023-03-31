@@ -15,7 +15,7 @@ A optimization tools for flutter web，solved web page loading slow and browser 
 
 ```yaml
 dev_dependencies:
-  flutter_web_optimizer: ^1.1.12
+  flutter_web_optimizer: ^1.2.0
 ```
 
 ## Usage
