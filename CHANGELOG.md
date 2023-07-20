@@ -1,3 +1,7 @@
+## 1.3.0
+
+- the plugin is compatible with Flutter 3.10.5
+
 ## 1.2.0
 
 - `flutter.js`compatible with flutter version 3.7
