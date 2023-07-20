@@ -12,6 +12,7 @@ import 'package:html/dom.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:package_config/package_config.dart';
 import 'package:path/path.dart' as path;
+import 'package:standard_message_codec/standard_message_codec.dart';
 
 import '../common/logger.dart';
 import '../common/model.dart';
@@ -396,9 +397,14 @@ class OptimizeCommand extends Command<void> {
     /// hash化assets目录
     void hashAssetsDir(Map<String, File> files) {
       // 读取资源清单文件
+      // flutter 3.10.5 版本后 AssetManifest.json 变更为 AssetManifest.bin
+      // 文件编码使用StandardMessageCodec
       final File assetManifest =
-          File(path.join(_webOutput, 'assets', 'AssetManifest.json'));
-      String assetManifestContents = assetManifest.readAsStringSync();
+          File(path.join(_webOutput, 'assets', 'AssetManifest.bin'));
+      ByteData assetManifestByteData =
+          assetManifest.readAsBytesSync().buffer.asByteData();
+      String assetManifestContents = jsonEncode(
+          const StandardMessageCodec().decodeMessage(assetManifestByteData));
       // 读取字体清单文件
       final File fontManifest =
           File(path.join(_webOutput, 'assets', 'FontManifest.json'));
@@ -432,7 +438,11 @@ class OptimizeCommand extends Command<void> {
       });
 
       // 写入修改后的资源、字体清单文件
-      assetManifest.writeAsStringSync(assetManifestContents);
+      // 文件编码为StandardMessageCodec的写入方式
+      assetManifestByteData = const StandardMessageCodec()
+          .encodeMessage(jsonDecode(assetManifestContents))!;
+      assetManifest.writeAsBytes(assetManifestByteData.buffer
+          .asInt8List(0, assetManifestByteData.lengthInBytes));
       fontManifest.writeAsStringSync(fontManifestContents);
     }
 
