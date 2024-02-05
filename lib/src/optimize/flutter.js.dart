@@ -263,6 +263,17 @@ _flutter.loader = null;
      * @param {Function} engineInitializer @see https://github.com/flutter/engine/blob/main/lib/web_ui/lib/src/engine/js_interop/js_loader.dart#L42
      */
     didCreateEngineInitializer(engineInitializer) {
+      // hook initializeEngine function，set assetBase and canvasKitBaseUrl
+      const originalInitializeEngine = engineInitializer.initializeEngine;
+      engineInitializer.initializeEngine = function(args) {
+        if (args && typeof args === 'object') {
+          Object.assign(args, {
+            assetBase: args.assetBase || assetBase,
+            canvasKitBaseUrl: args.canvasKitBaseUrl || `${assetBase}canvaskit/`,
+          })
+        }
+        return originalInitializeEngine.call(this, args);
+      }
       if (typeof this._didCreateEngineInitializerResolve === "function") {
         this._didCreateEngineInitializerResolve(engineInitializer);
         // Remove the resolver after the first time, so Flutter Web can hot restart.

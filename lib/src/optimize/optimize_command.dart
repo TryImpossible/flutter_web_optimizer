@@ -46,6 +46,11 @@ class OptimizeCommand extends Command<void> {
       ..addOption(
         'hash-filter-regexp',
         help: 'hash file filter',
+      )
+      ..addFlag(
+        'enable-vconsole',
+        help: 'enable vconsole tools',
+        defaultsTo: false,
       );
   }
 
@@ -70,6 +75,9 @@ class OptimizeCommand extends Command<void> {
 
   /// 哈希文件筛选器
   late String _hashFilterRegexp;
+
+  /// 是否启用vconsole
+  late bool _enableVConsole;
 
   /// isolate通信，发送信息
   SendPort? _sendPort;
@@ -209,6 +217,9 @@ class OptimizeCommand extends Command<void> {
 
     /// 哈希文件筛选器
     _hashFilterRegexp = argResults!['hash-filter-regexp'] ?? '';
+
+    /// 是否启用vconsole
+    _enableVConsole = argResults!['enable-vconsole'];
   }
 
   /// 初始化isolate通信
@@ -327,10 +338,13 @@ class OptimizeCommand extends Command<void> {
     final String md5Hash = crypto.md5.convert(bytes).toString().substring(0, 8);
 
     // 文件名使用hash值
-    final String basename = path.basenameWithoutExtension(file.path);
-    final String extension = path.extension(file.path);
-    final String filename = '$basename.$md5Hash$extension';
+    String filename = path.basename(file.path);
+    final index = filename.indexOf('.');
+    String basename = filename.substring(0, index);
+    String extension = filename.substring(index);
+    filename = '$basename.$md5Hash$extension';
     Logger.info('hashed file name: $filename');
+
     return filename;
   }
 
@@ -356,6 +370,7 @@ class OptimizeCommand extends Command<void> {
         return match[0] ?? '';
       }
       // 文件名使用hash值
+      // AssetManifest.6acec4df.json
       final String filename = _md5File(file);
       // 此时key已经是 posix 平台的分隔符 /
       // 统一将路径分隔符修改成 / ，assetManifest 和 fontManifest 使用的是 posix 平台的分隔符 /
@@ -367,6 +382,22 @@ class OptimizeCommand extends Command<void> {
       hashFiles[file.path] = newPath;
 
       return '${match[1]}$newKey${match[3]}';
+    }
+
+    /// hash化canvaskit
+    void hashCanvaskitDir() {
+      // 遍历构建产物icons目录
+      final Directory canvaskitDir =
+          Directory(path.join(_webOutput, 'canvaskit'));
+      canvaskitDir
+          .listSync(recursive: true)
+          .whereType<File>() // 文件类型
+          .where((File file) => !path.basename(file.path).startsWith('.'))
+          .forEach((File file) {
+        // final String filename = _md5File(file);
+        // _hashFiles[file.path] = path.join(path.dirname(file.path), filename);
+        _hashFiles[file.path] = file.path;
+      });
     }
 
     /// hash化icons目录
@@ -397,14 +428,21 @@ class OptimizeCommand extends Command<void> {
     /// hash化assets目录
     void hashAssetsDir(Map<String, File> files) {
       // 读取资源清单文件
+      final File assetManifestJson =
+          File(path.join(_webOutput, 'assets', 'AssetManifest.json'));
+      String assetManifestJsonContents = assetManifestJson.readAsStringSync();
       // flutter 3.10.5 版本后 AssetManifest.json 变更为 AssetManifest.bin
       // 文件编码使用StandardMessageCodec
-      final File assetManifest =
+      final File assetManifestBin =
           File(path.join(_webOutput, 'assets', 'AssetManifest.bin'));
       ByteData assetManifestByteData =
-          assetManifest.readAsBytesSync().buffer.asByteData();
-      String assetManifestContents = jsonEncode(
+          assetManifestBin.readAsBytesSync().buffer.asByteData();
+      String assetManifestBinContents = jsonEncode(
           const StandardMessageCodec().decodeMessage(assetManifestByteData));
+      // flutter 3.16 版本后 AssetManifest.bin 变更为 AssetManifest.bin.json
+      final File assetManifestBinJson =
+          File(path.join(_webOutput, 'assets', 'AssetManifest.bin.json'));
+
       // 读取字体清单文件
       final File fontManifest =
           File(path.join(_webOutput, 'assets', 'FontManifest.json'));
@@ -421,7 +459,12 @@ class OptimizeCommand extends Command<void> {
         String key = path.relative(file.path, from: assetsDir.path);
         key = path.toUri(key).toString();
         // 替换资源清单文件
-        assetManifestContents = assetManifestContents.replaceFirstMapped(
+        assetManifestJsonContents =
+            assetManifestJsonContents.replaceFirstMapped(
+          RegExp('(.*)($key)(.*)'),
+          (Match match) => replace(match, file, key, _hashFiles),
+        );
+        assetManifestBinContents = assetManifestBinContents.replaceFirstMapped(
           RegExp('(.*)($key)(.*)'),
           (Match match) => replace(match, file, key, _hashFiles),
         );
@@ -438,16 +481,35 @@ class OptimizeCommand extends Command<void> {
       });
 
       // 写入修改后的资源、字体清单文件
+      assetManifestJson.writeAsStringSync(assetManifestJsonContents);
       // 文件编码为StandardMessageCodec的写入方式
       assetManifestByteData = const StandardMessageCodec()
-          .encodeMessage(jsonDecode(assetManifestContents))!;
-      assetManifest.writeAsBytes(assetManifestByteData.buffer
-          .asInt8List(0, assetManifestByteData.lengthInBytes));
+          .encodeMessage(jsonDecode(assetManifestBinContents))!;
+      final Int8List assetManifestByte = assetManifestByteData.buffer
+          .asInt8List(0, assetManifestByteData.lengthInBytes);
+      assetManifestBin.writeAsBytes(assetManifestByte);
+      // AssetManifest.bin 变更为 AssetManifest.bin.json
+      final String assetManifestBinJsonContents =
+          json.encode(base64.encode(assetManifestByte));
+      assetManifestBinJson.writeAsStringSync(assetManifestBinJsonContents);
+
       fontManifest.writeAsStringSync(fontManifestContents);
     }
 
     /// 修正源码引用
     void amendSourceCode(Map<String, File> files) {
+      // 将AssetManifest.bin.json文件进行md5
+      String assetManifestBinJsonFileName = 'AssetManifest.bin.json';
+      final File assetManifestBinJsonFile =
+          File(path.join(_webOutput, 'assets', assetManifestBinJsonFileName));
+      files[assetManifestBinJsonFileName] = assetManifestBinJsonFile;
+
+      // 将AssetManifest.bin文件进行md5
+      String assetManifestBinFileName = 'AssetManifest.bin';
+      final File assetManifestBinFile =
+          File(path.join(_webOutput, 'assets', assetManifestBinFileName));
+      files[assetManifestBinFileName] = assetManifestBinFile;
+
       // 将AssetManifest.json文件进行md5
       String assetManifestFileName = 'AssetManifest.json';
       final File assetManifestFile =
@@ -473,6 +535,7 @@ class OptimizeCommand extends Command<void> {
         }
         amendSourceCodeRelatedStrings[key] = newKey;
       });
+      Logger.info('msg: $amendSourceCodeRelatedStrings');
 
       Directory(_webOutput)
           .listSync()
@@ -511,6 +574,7 @@ class OptimizeCommand extends Command<void> {
     // 需要修正源码中关联的文件引用
     final Map<String, File> amendSourceCodeRelatedFiles = <String, File>{};
 
+    hashCanvaskitDir();
     hashIconsDir();
     hashAssetsDir(amendSourceCodeRelatedFiles);
     amendSourceCode(amendSourceCodeRelatedFiles);
@@ -686,50 +750,70 @@ class OptimizeCommand extends Command<void> {
     /// 注入 assetBase meta 标签
     void injectAssetBaseMeta({
       required Document document,
-      required Element? headElement,
+      required Element headElement,
     }) {
-      if (headElement != null) {
-        void injectAssetBaseMeta(Element element) {
-          final Element meta = Element.tag('meta');
-          meta.attributes['name'] = 'assetBase';
-          meta.attributes['content'] = _assetBase;
+      final DocumentFragment metaFragment = document.createDocumentFragment();
+      metaFragment.append(Text('\n'));
+      metaFragment.append(Comment('content值必须以 / 结尾'));
+      metaFragment.append(Text('\n'));
+      final Element meta = Element.tag('meta')
+        ..attributes['name'] = 'assetBase'
+        ..attributes['content'] = _assetBase;
+      metaFragment.append(meta);
+      metaFragment.append(Text('\n'));
 
-          element.append(Text('\n'));
-          element.append(Comment('content值必须以 / 结尾'));
-          element.append(Text('\n'));
-          element.append(meta);
-          element.append(Text('\n'));
-        }
-
-        final List<Element> metas = document.getElementsByTagName('meta');
-        if (metas.isNotEmpty) {
-          injectAssetBaseMeta(metas.last);
-        } else {
-          injectAssetBaseMeta(headElement);
-        }
+      final List<Element> metas = headElement.getElementsByTagName('meta');
+      if (metas.isNotEmpty) {
+        headElement.insertBefore(metaFragment, metas.last.nextElementSibling);
+      } else {
+        headElement.append(metaFragment);
       }
     }
 
     /// 注入 flutter_web_optimizer.js script
     void injectFlutterWebOptimizerScript({
-      required Document document,
-      required Element? headElement,
+      required Element headElement,
     }) {
-      if (headElement != null) {
-        final Element script = Element.tag('script');
-        script.attributes['src'] = 'flutter_web_optimizer.js';
-        script.attributes['defer'] = '';
+      final Element script = Element.tag('script');
+      script.attributes['src'] = 'flutter_web_optimizer.js';
+      script.attributes['defer'] = '';
 
-        final List<Element> scripts = document.getElementsByTagName('script');
-        if (scripts.length > 1) {
-          final Element firstScript = scripts.first;
-          headElement.insertBefore(script, firstScript);
-          headElement.insertBefore(Text('\n'), firstScript);
-        } else {
-          headElement.append(script);
-          headElement.append(Text('\n'));
-        }
+      final List<Element> scripts = headElement.getElementsByTagName('script');
+      if (scripts.length > 1) {
+        final Element firstScript = scripts.first;
+        headElement.insertBefore(script, firstScript);
+        headElement.insertBefore(Text('\n'), firstScript);
+      } else {
+        headElement.append(script);
+        headElement.append(Text('\n'));
       }
+    }
+
+    /// 插入vconsole
+    void injectVConsoleScript({
+      required Element headElement,
+    }) {
+      final Element script = Element.tag('script');
+      script.attributes['src'] =
+          'https://cdn.jsdelivr.net/npm/vconsole@latest/dist/vconsole.min.js';
+
+      headElement.append(script);
+      headElement.append(Text('\n'));
+      // headElement.append(Text(r'''
+      // <script>
+      //   // VConsole will be exported to `window.VConsole` by default.
+      //   var vConsole = new window.VConsole();
+      // </script>
+      // '''));
+      // headElement.append(Text('\n'));
+
+      final Element initScript = Element.tag('script');
+      initScript.text = r'''
+        // VConsole will be exported to `window.VConsole` by default.
+        var vConsole = new window.VConsole();
+        ''';
+      headElement.append(initScript);
+      headElement.append(Text('\n'));
     }
 
     /// 替换哈希后的文件
@@ -744,40 +828,46 @@ class OptimizeCommand extends Command<void> {
       }
     }
 
+    /// 修正元素值
+    void amendElements({required Document document}) {
+      // 查找所有元素
+      final List<Element> elements = document.querySelectorAll('*');
+      for (final Element element in elements) {
+        if (element.attributes.containsKey('href')) {
+          String href = element.attributes['href']!;
+          final bool isAbsolute = !<String>[
+            'icons/Icon-192.png',
+            'favicon.png',
+            'manifest.json',
+          ].contains(href);
+          href = replace(href, isAbsolute: isAbsolute);
+          element.attributes['href'] = href;
+        }
+        if (element.attributes.containsKey('src')) {
+          String src = element.attributes['src']!;
+          src = replace(src);
+          element.attributes['src'] = src;
+        }
+      }
+    }
+
     /// 读取index.html
     final File file = File('$_webOutput/index.html');
     String contents = file.readAsStringSync();
 
     /// 解析 index.html 为 Document
     final Document document = parse(contents);
-
     final Element? headElement = document.head;
-
-    injectAssetBaseMeta(document: document, headElement: headElement);
-    injectFlutterWebOptimizerScript(
-      document: document,
-      headElement: headElement,
-    );
-
-    // 查找所有元素
-    final List<Element> elements = document.querySelectorAll('*');
-    for (final Element element in elements) {
-      if (element.attributes.containsKey('href')) {
-        String href = element.attributes['href']!;
-        final bool isAbsolute = !<String>[
-          'icons/Icon-192.png',
-          'favicon.png',
-          'manifest.json',
-        ].contains(href);
-        href = replace(href, isAbsolute: isAbsolute);
-        element.attributes['href'] = href;
-      }
-      if (element.attributes.containsKey('src')) {
-        String src = element.attributes['src']!;
-        src = replace(src);
-        element.attributes['src'] = src;
-      }
+    if (headElement == null) {
+      Logger.error('the document head cannot be null');
+      exit(2);
     }
+    // injectAssetBaseMeta(document: document, headElement: headElement);
+    injectFlutterWebOptimizerScript(headElement: headElement);
+    if (_enableVConsole) {
+      injectVConsoleScript(headElement: headElement);
+    }
+    amendElements(document: document);
 
     // 写入文件
     file.writeAsStringSync(document.outerHtml);

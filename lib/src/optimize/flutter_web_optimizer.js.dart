@@ -1,6 +1,6 @@
 const String flutterWebOptimizerSourceCode = r'''
     // The code below is injected by flutter web optimizer, do not edit!!!!!!
-    
+
     // window.assetBase
     var assetBase = null;
     
@@ -16,11 +16,14 @@ const String flutterWebOptimizerSourceCode = r'''
         var value;
         Object.defineProperty(element, property, {
           get: function () {
-            return value;
+            return element.getAttribute(property);
           },
           set: function (v) {
             value = v;
             if (typeof v === 'string') {
+              if (v.startsWith(assetBase)) {
+                v = v.replace(assetBase, '');
+              }
               if (v.startsWith('./')) {
                 v = v.replace('./', '');
               }
@@ -31,7 +34,7 @@ const String flutterWebOptimizerSourceCode = r'''
             element.setAttribute(property, value);
           }
         })
-  
+    
         var _setAttribute = element.setAttribute;
         element.setAttribute = function () {
           var args = Array.prototype.slice.call(arguments);
@@ -42,7 +45,7 @@ const String flutterWebOptimizerSourceCode = r'''
           _setAttribute.apply(element, args);
         }
       }
-  
+    
       var _createElement = document.createElement;
       var _hookProperties = {'link': 'href', 'script': 'src', 'audio': 'src', 'video': 'src', 'map': 'src', 'img': 'src'};
       document.createElement = function (tagName) {
@@ -52,21 +55,15 @@ const String flutterWebOptimizerSourceCode = r'''
           _defineProperty(element, property);
         }
         return element;
-      }  
+      }
     })();
-
+    
     // load main.dart.js_xxx.part js
     function dartDeferredLibraryLoader(uri, successCallback, errorCallback, loadId) {
       console.info('uri: ' + uri + ', loadId: '+ loadId);
-      var src;
-      try {
-        var url = new URL(uri);
-        var key = url.pathname.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
-        src = assetBase + mainjsManifest[key];
-      } catch (e) {
-        var key = uri.replaceAll(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
-        src = assetBase + mainjsManifest[key];
-      }
+    
+      var key = uri.toString().replace(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
+      var src = assetBase + mainjsManifest[key];
     
       var script = document.createElement("script");
       script.type = "text/javascript";
