@@ -16,17 +16,14 @@ class MainPage extends StatelessWidget {
         actions: <Widget>[
           TextButton(
             onPressed: () => _goSubPage(context),
-            child: const Text(
-              '进入子页面',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('进入子页面'),
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: const SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const <Widget>[
+          children: <Widget>[
             _SVG(),
             _Video(),
             _Toast(),
@@ -168,7 +165,7 @@ class _GoogleFonts extends StatelessWidget {
         // const Text('', style: TextStyle(color: Colors.black)),
         Text(
           'This is Google Fonts',
-          style: GoogleFonts.inter(
+          style: GoogleFonts.acme(
             textStyle: Theme.of(context).textTheme.headline4,
             fontSize: 24,
             fontWeight: FontWeight.w700,
