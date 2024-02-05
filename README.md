@@ -15,7 +15,7 @@ A optimization tools for flutter web，solved web page loading slow and browser 
 
 ```yaml
 dev_dependencies:
-  flutter_web_optimizer: ^1.3.0
+  flutter_web_optimizer: ^1.4.0
 ```
 
 ## Usage
@@ -62,3 +62,4 @@ flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.9
       for how to use it
 - `--enable-pwa`parameter not required，refers to PWA service worker，default to true
 - `--hash-filter-regexp`parameter not required，support filtering file when hash file 
+- `--enable-vconsole` parameter not required，refers to enable tencent vconsole tools, default to false

@@ -13,7 +13,7 @@
 
 ```yaml
 dev_dependencies:
-  flutter_web_optimizer: ^1.3.0
+  flutter_web_optimizer: ^1.4.0
 ```
 
 ## 用法
@@ -54,3 +54,4 @@ flutter pub run flutter_web_optimizer optimize --asset-base http://192.168.101.9
     - 插件模式：指插件的名称，用法参考[flutter_web_cos_upload_plugin](https://pub.flutter-io.cn/packages/flutter_web_cos_upload_plugin) 插件
 - `--enable-pwa`参数非必传，指 PWA service worker，默认是`true`
 - `--hash-filter-regexp`参数非必传，当进行hash文件操作时提供正则过滤
+- `--enable-vconsole`参数非必传，指启用vconsole工具，默认是`false`

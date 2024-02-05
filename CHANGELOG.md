@@ -1,3 +1,9 @@
+## 1.4.0
+
+- the plugin is compatible with Flutter 3.16
+- support canvaskit renderer
+- add `--enable-vconsole` args，support enable tencent vconsole tools
+
 ## 1.3.0
 
 - the plugin is compatible with Flutter 3.10.5
