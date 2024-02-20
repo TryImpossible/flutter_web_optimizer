@@ -266,13 +266,11 @@ _flutter.loader = null;
       // hook initializeEngine function，set assetBase and canvasKitBaseUrl
       const originalInitializeEngine = engineInitializer.initializeEngine;
       engineInitializer.initializeEngine = function(args) {
-        if (args && typeof args === 'object') {
-          Object.assign(args, {
-            assetBase: args.assetBase || assetBase,
-            canvasKitBaseUrl: args.canvasKitBaseUrl || `${assetBase}canvaskit/`,
-          })
+        const _args = { assetBase, canvasKitBaseUrl: `${assetBase}canvaskit/` };
+        if (Object.prototype.toString.call(args).slice(8, -1) === 'Object') {
+          Object.assign(_args, args);  
         }
-        return originalInitializeEngine.call(this, args);
+        return originalInitializeEngine.call(this, _args);
       }
       if (typeof this._didCreateEngineInitializerResolve === "function") {
         this._didCreateEngineInitializerResolve(engineInitializer);

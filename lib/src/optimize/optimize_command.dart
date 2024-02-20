@@ -485,8 +485,8 @@ class OptimizeCommand extends Command<void> {
       // 文件编码为StandardMessageCodec的写入方式
       assetManifestByteData = const StandardMessageCodec()
           .encodeMessage(jsonDecode(assetManifestBinContents))!;
-      final Int8List assetManifestByte = assetManifestByteData.buffer
-          .asInt8List(0, assetManifestByteData.lengthInBytes);
+      final Uint8List assetManifestByte = assetManifestByteData.buffer
+          .asUint8List(0, assetManifestByteData.lengthInBytes);
       assetManifestBin.writeAsBytes(assetManifestByte);
       // AssetManifest.bin 变更为 AssetManifest.bin.json
       final String assetManifestBinJsonContents =
@@ -748,27 +748,27 @@ class OptimizeCommand extends Command<void> {
   /// 修改 index.html
   void _injectToHtml() {
     /// 注入 assetBase meta 标签
-    void injectAssetBaseMeta({
-      required Document document,
-      required Element headElement,
-    }) {
-      final DocumentFragment metaFragment = document.createDocumentFragment();
-      metaFragment.append(Text('\n'));
-      metaFragment.append(Comment('content值必须以 / 结尾'));
-      metaFragment.append(Text('\n'));
-      final Element meta = Element.tag('meta')
-        ..attributes['name'] = 'assetBase'
-        ..attributes['content'] = _assetBase;
-      metaFragment.append(meta);
-      metaFragment.append(Text('\n'));
-
-      final List<Element> metas = headElement.getElementsByTagName('meta');
-      if (metas.isNotEmpty) {
-        headElement.insertBefore(metaFragment, metas.last.nextElementSibling);
-      } else {
-        headElement.append(metaFragment);
-      }
-    }
+    // void injectAssetBaseMeta({
+    //   required Document document,
+    //   required Element headElement,
+    // }) {
+    //   final DocumentFragment metaFragment = document.createDocumentFragment();
+    //   metaFragment.append(Text('\n'));
+    //   metaFragment.append(Comment('content值必须以 / 结尾'));
+    //   metaFragment.append(Text('\n'));
+    //   final Element meta = Element.tag('meta')
+    //     ..attributes['name'] = 'assetBase'
+    //     ..attributes['content'] = _assetBase;
+    //   metaFragment.append(meta);
+    //   metaFragment.append(Text('\n'));
+    //
+    //   final List<Element> metas = headElement.getElementsByTagName('meta');
+    //   if (metas.isNotEmpty) {
+    //     headElement.insertBefore(metaFragment, metas.last.nextElementSibling);
+    //   } else {
+    //     headElement.append(metaFragment);
+    //   }
+    // }
 
     /// 注入 flutter_web_optimizer.js script
     void injectFlutterWebOptimizerScript({
