@@ -1,3 +1,7 @@
+## 1.4.1
+
+- fix bug
+
 ## 1.4.0
 
 - the plugin is compatible with Flutter 3.16

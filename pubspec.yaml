@@ -1,6 +1,6 @@
 name: flutter_web_optimizer
 description: A optimization tools for flutter web, solved web page loading slow and browser cache problem.
-version: 1.4.0
+version: 1.4.1
 homepage: https://github.com/TryImpossible/flutter_web_optimizer
 repository: https://github.com/TryImpossible/flutter_web_optimizer
 issue_tracker: https://github.com/TryImpossible/flutter_web_optimizer/issues
@@ -10,21 +10,21 @@ environment:
 
 dependencies:
   # https://pub.flutter-io.cn/packages/path
-  path: ^1.8.2
+  path: ^1.9.0
   # https://pub.flutter-io.cn/packages/args
-  args: ^2.3.1
+  args: ^2.4.2
   #  # https://pub.flutter-io.cn/packages/completion
   #  completion: ^1.0.0
   # https://pub.flutter-io.cn/packages/html
-  html: ^0.15.1
+  html: ^0.15.4
   # https://pub.flutter-io.cn/packages/crypto
-  crypto: ^3.0.2
+  crypto: ^3.0.3
   #  # https://pub.flutter-io.cn/packages/yaml
   #  yaml: ^3.1.1
   # https://pub.flutter-io.cn/packages/package_config
   package_config: ^2.1.0
   # https://pub.flutter-io.cn/packages/standard_message_codec
-  standard_message_codec: ^0.0.1+3
+  standard_message_codec: ^0.0.1+4
 #  # https://pub.flutter-io.cn/packages/cli_util
 #  cli_util: ^0.3.5
 

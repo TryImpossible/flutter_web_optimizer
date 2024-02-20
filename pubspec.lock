@@ -21,10 +21,10 @@ packages:
     dependency: "direct main"
     description:
       name: args
-      sha256: b003c3098049a51720352d219b0bb5f219b60fbfb68e7a4748139a06a5676515
+      sha256: eef6c46b622e0494a36c5a12d10d77fb4e855501a91c1b9ef9339326e58f0596
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.3.1"
+    version: "2.4.2"
   async:
     dependency: transitive
     description:
@@ -69,10 +69,10 @@ packages:
     dependency: "direct main"
     description:
       name: crypto
-      sha256: aa274aa7774f8964e4f4f38cc994db7b6158dd36e9187aaceaddc994b35c6c67
+      sha256: ff625774173754681d66daaf4a448684fb04b78f902da9cb3d308c19cc5e8bab
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "3.0.2"
+    version: "3.0.3"
   csslib:
     dependency: transitive
     description:
@@ -109,10 +109,10 @@ packages:
     dependency: "direct main"
     description:
       name: html
-      sha256: d9793e10dbe0e6c364f4c59bf3e01fb33a9b2a674bc7a1081693dba0614b6269
+      sha256: "3a7812d5bcd2894edf53dfaf8cd640876cf6cef50a8f238745c8b8120ea74d3a"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.15.1"
+    version: "0.15.4"
   http_multi_server:
     dependency: transitive
     description:
@@ -205,10 +205,10 @@ packages:
     dependency: "direct main"
     description:
       name: path
-      sha256: db9d4f58c908a4ba5953fcee2ae317c94889433e5024c27ce74a37f94267945b
+      sha256: "087ce49c3f0dc39180befefc60fdb4acd8f8620e5682fe2476afd0b3688bb4af"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "1.8.2"
+    version: "1.9.0"
   pool:
     dependency: transitive
     description:
@@ -293,10 +293,10 @@ packages:
     dependency: "direct main"
     description:
       name: standard_message_codec
-      sha256: "906e66549f0ea90d87c5320e0b0f04738c5d14bc7fb121a15da31b60e84f5b15"
+      sha256: fc7dd712d191b7e33196a0ecf354c4573492bb95995e7166cb6f73b047f9cae0
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "0.0.1+3"
+    version: "0.0.1+4"
   stream_channel:
     dependency: transitive
     description:
@@ -394,4 +394,4 @@ packages:
     source: hosted
     version: "3.1.1"
 sdks:
-  dart: ">=2.17.6 <4.0.0"
+  dart: ">=3.0.0 <4.0.0"
