@@ -36,7 +36,7 @@ jobs:
 
       - name: Setup Flutter
         run: |
-          git clone https://github.com/flutter/flutter.git --depth 1 -b beta ~/flutter
+          git clone https://github.com/flutter/flutter.git --depth 1 -b stable ~/flutter
           echo "~/flutter/bin" >> ${GITHUB_PATH}
 
       - name: Cache dependencies
