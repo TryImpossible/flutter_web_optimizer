@@ -1,3 +1,7 @@
+## 1.4.2
+
+- example project upgrade to flutter version 3.22.1
+
 ## 1.4.1
 
 - fix bug
