@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:video_player/video_player.dart';
 
 class MainPage extends StatelessWidget {
-  const MainPage({Key? key}) : super(key: key);
+  const MainPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class MainPage extends StatelessWidget {
 }
 
 class _Video extends StatefulWidget {
-  const _Video({Key? key}) : super(key: key);
+  const _Video({super.key});
 
   @override
   State<_Video> createState() => _VideoState();
@@ -64,8 +64,9 @@ class _VideoState extends State<_Video> {
   }
 
   Future<void> _initVideo() async {
-    _videoPlayerController = VideoPlayerController.network(
+    final Uri uri = Uri.parse(
         'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4');
+    _videoPlayerController = VideoPlayerController.networkUrl(uri);
     _chewieController = ChewieController(
       videoPlayerController: _videoPlayerController,
       autoInitialize: true,
@@ -88,7 +89,7 @@ class _VideoState extends State<_Video> {
 }
 
 class _SVG extends StatelessWidget {
-  const _SVG({Key? key}) : super(key: key);
+  const _SVG({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +128,7 @@ class _SVG extends StatelessWidget {
 }
 
 class _Toast extends StatelessWidget {
-  const _Toast({Key? key}) : super(key: key);
+  const _Toast({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -155,7 +156,7 @@ class _Toast extends StatelessWidget {
 }
 
 class _GoogleFonts extends StatelessWidget {
-  const _GoogleFonts({Key? key}) : super(key: key);
+  const _GoogleFonts({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -166,7 +167,7 @@ class _GoogleFonts extends StatelessWidget {
         Text(
           'This is Google Fonts',
           style: GoogleFonts.acme(
-            textStyle: Theme.of(context).textTheme.headline4,
+            textStyle: Theme.of(context).textTheme.headlineMedium,
             fontSize: 24,
             fontWeight: FontWeight.w700,
             fontStyle: FontStyle.italic,
