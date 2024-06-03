@@ -277,8 +277,8 @@ class OptimizeCommand extends Command<void> {
         f.deleteSync();
       }
       final RandomAccessFile raf = f.openSync(mode: FileMode.write);
-      final Stream<List<int>> inputStream = file.openRead(startIndex, endIndex);
-      inputStream.listen(
+      late final StreamSubscription<List<int>> subscription;
+      subscription = file.openRead(startIndex, endIndex).listen(
         (List<int> data) {
           raf.writeFromSync(data);
         },
@@ -286,11 +286,13 @@ class OptimizeCommand extends Command<void> {
           raf.flushSync();
           raf.closeSync();
           completer.complete(true);
+          subscription.cancel();
         },
         onError: (dynamic data) {
           raf.flushSync();
           raf.closeSync();
           completer.complete(false);
+          subscription.cancel();
         },
       );
       return completer.future;
@@ -487,7 +489,7 @@ class OptimizeCommand extends Command<void> {
           .encodeMessage(jsonDecode(assetManifestBinContents))!;
       final Uint8List assetManifestByte = assetManifestByteData.buffer
           .asUint8List(0, assetManifestByteData.lengthInBytes);
-      assetManifestBin.writeAsBytes(assetManifestByte);
+      assetManifestBin.writeAsBytesSync(assetManifestByte);
       // AssetManifest.bin 变更为 AssetManifest.bin.json
       final String assetManifestBinJsonContents =
           json.encode(base64.encode(assetManifestByte));
