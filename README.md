@@ -4,6 +4,13 @@
 
 A optimization tools for flutter web，solved web page loading slow and browser cache problem.
 
+## Importantance
+
+ how to configure `index.html`, please refer to the following
+
+- [Flutter web app initialization](https://docs.flutter.dev/platform-integration/web/initialization)
+- [example/index.html](https://github.com/TryImpossible/flutter_web_optimizer/blob/main/example/web/index.html)
+
 ## Features
 
 ![app_web_optimizer](https://github.com/TryImpossible/flutter_web_optimizer/raw/main/20230111-172132.png)

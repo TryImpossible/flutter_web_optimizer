@@ -1,3 +1,9 @@
+## 1.5.0
+
+- the plugin is compatible with Flutter version 3.24 and above
+- example project upgrade to flutter version 3.27.1
+- fix bug，[issue](https://github.com/TryImpossible/flutter_web_optimizer/issues/34)
+
 ## 1.4.2
 
 - example project upgrade to flutter version 3.22.1

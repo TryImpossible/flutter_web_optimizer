@@ -1,5 +1,12 @@
 一个命令行工具，针对`flutter web`加载慢和缓存问题提供了一套解决方案。
 
+## 前置
+
+关于index.html如何配置，请参考以下
+
+- [Flutter web app initialization](https://docs.flutter.dev/platform-integration/web/initialization)
+- [example/index.html](https://github.com/TryImpossible/flutter_web_optimizer/blob/main/example/web/index.html)
+
 ## 功能
 
 ![app_web_optimizer](https://github.com/TryImpossible/flutter_web_optimizer/raw/main/20230111-172132.png)
