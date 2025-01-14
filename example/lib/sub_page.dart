@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widget/image_widget.dart';
 
 class SubPage extends StatelessWidget {
   const SubPage({super.key});
@@ -11,7 +12,7 @@ class SubPage extends StatelessWidget {
         child: SizedBox(
           width: 200,
           height: 200,
-          child: Image.asset('assets/images/lufei.jpeg'),
+          child: ImageWidget.lufei(),
         ),
       ),
     );

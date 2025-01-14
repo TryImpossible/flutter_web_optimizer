@@ -37,21 +37,19 @@
 </head>
 <body>
 <script>
-    {{flutter_build_config}}
     window.addEventListener('load', function(ev) {
+      {{flutter_build_config}}
       // Download main.dart.js
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
+      _flutter.loader.load({
+        serviceWorkerSettings: {
           serviceWorkerVersion: {{flutter_service_worker_version}},
         },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
+        onEntrypointLoaded: async function(engineInitializer) {
+          const appRunner = await engineInitializer.initializeEngine();
+          await appRunner.runApp();
         }
       });
     });
-
 </script>
 </body>
 </html>
