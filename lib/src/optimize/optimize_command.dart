@@ -285,14 +285,14 @@ class OptimizeCommand extends Command<void> {
         onDone: () {
           raf.flushSync();
           raf.closeSync();
-          completer.complete(true);
           subscription.cancel();
+          completer.complete(true);
         },
         onError: (dynamic data) {
           raf.flushSync();
           raf.closeSync();
-          completer.complete(false);
           subscription.cancel();
+          completer.complete(false);
         },
       );
       return completer.future;
@@ -301,10 +301,6 @@ class OptimizeCommand extends Command<void> {
     final File file = outputDir.listSync().whereType<File>().singleWhere(
         (File entity) => path.basename(entity.path) == 'main.dart.js');
 
-    /// 针对xhr加载动态js文件，插入『@ sourceURL』标记，方便调试
-    file.openSync(mode: FileMode.append)
-      ..writeStringSync('\n\n//@ sourceURL=main.dart.js\n')
-      ..closeSync();
     const int totalChunk = 6;
     final Uint8List bytes = file.readAsBytesSync();
     final int chunkSize = (bytes.length / totalChunk).ceil();
@@ -341,7 +337,7 @@ class OptimizeCommand extends Command<void> {
 
     // 文件名使用hash值
     String filename = path.basename(file.path);
-    final index = filename.indexOf('.');
+    final index = filename.lastIndexOf('.');
     String basename = filename.substring(0, index);
     String extension = filename.substring(index);
     filename = '$basename.$md5Hash$extension';
@@ -537,7 +533,6 @@ class OptimizeCommand extends Command<void> {
         }
         amendSourceCodeRelatedStrings[key] = newKey;
       });
-      Logger.info('msg: $amendSourceCodeRelatedStrings');
 
       Directory(_webOutput)
           .listSync()
@@ -551,7 +546,7 @@ class OptimizeCommand extends Command<void> {
         // 修正修正源码中关联的字符串引用
         String contents = file.readAsStringSync();
         amendSourceCodeRelatedStrings.forEach((String key, String value) {
-          contents = contents.replaceAll(RegExp(key), value);
+          contents = contents.replaceAll(RegExp('"$key"'), '"$value"');
         });
         file.writeAsStringSync(contents);
       });
@@ -612,7 +607,7 @@ class OptimizeCommand extends Command<void> {
     File amendSourceCode(Map<String, String> jsManifest) {
       // 更新 assetBase、mainjsManifest 和 hashFileManifest
       const JsonEncoder jsonEncoder = JsonEncoder.withIndent('  ');
-      final String flutterWebOptimizer = flutterWebOptimizerSourceCode
+      String flutterWebOptimizer = flutterWebOptimizerSourceCode
           .replaceAll(
             RegExp('var assetBase = null;'),
             'var assetBase = "$_assetBase";',
@@ -625,6 +620,33 @@ class OptimizeCommand extends Command<void> {
             RegExp('var hashFileManifest = null;'),
             'var hashFileManifest = ${jsonEncoder.convert(_hashFileManifest)};',
           );
+
+      final File mainDartJsFile = Directory(_webOutput)
+          .listSync()
+          .whereType<File>()
+          .firstWhere((File file) {
+        final RegExp regExp = RegExp(r'^main\.dart\.(.+)\.js$');
+        final String filename = path.basename(file.path);
+        return regExp.hasMatch(filename);
+      });
+      final String contents = mainDartJsFile.readAsStringSync();
+      final String? deferredLibraryParts =
+          RegExp(r'deferredLibraryParts:{(.*?)},')
+              .firstMatch(contents)
+              ?.group(1);
+      if (deferredLibraryParts != null) {
+        flutterWebOptimizer = flutterWebOptimizer.replaceAll(
+            RegExp('var deferredLibraryParts = {};'),
+            'var deferredLibraryParts = {$deferredLibraryParts};');
+      }
+      final String? deferredPartUris =
+          RegExp(r'deferredPartUris:\[(.*?)\],').firstMatch(contents)?.group(1);
+      if (deferredPartUris != null) {
+        flutterWebOptimizer = flutterWebOptimizer.replaceAll(
+            RegExp(r'var deferredPartUris = \[\];'),
+            'var deferredPartUris = [$deferredPartUris];');
+      }
+
       final File file = File('$_webOutput/flutter_web_optimizer.js')
         ..createSync()
         ..writeAsStringSync(flutterWebOptimizer);

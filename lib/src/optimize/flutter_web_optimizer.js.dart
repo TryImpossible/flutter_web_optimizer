@@ -9,6 +9,12 @@ const String flutterWebOptimizerSourceCode = r'''
     
     // window.hashFileManifest
     var hashFileManifest = null;
+
+    // window.deferredLibraryParts
+    var deferredLibraryParts = {};
+
+    // window.deferredPartUris
+    var deferredPartUris = [];
     
     // hook dynamic create element `src` `href` property
     (function(){
@@ -57,10 +63,28 @@ const String flutterWebOptimizerSourceCode = r'''
         return element;
       }
     })();
+
+    // preload main.dart.js_xxx.part js when page initialize
+    (function(){
+      var path;
+      if (window.location.hash) {
+        var hash = window.location.hash.substring(2);
+        path = hash.split('?')[0];
+      } else {
+        var pathname = window.location.pathname;
+        path = pathname.substring(pathname.lastIndexOf('/') + 1)
+      }
+      if (deferredLibraryParts[path]) {
+        for (var index in deferredLibraryParts[path]) {
+          // console.info('load main.dart.js_xxx.part: ' + deferredPartUris[index] + 'Date.now: ' + Date.now());
+          dartDeferredLibraryLoader(deferredPartUris[index], null, null, path, null)
+        }
+      }
+    })();
     
     // load main.dart.js_xxx.part js
-    function dartDeferredLibraryLoader(uri, successCallback, errorCallback, loadId) {
-      console.info('uri: ' + uri + ', loadId: '+ loadId);
+    function dartDeferredLibraryLoader(uri, successCallback, errorCallback, loadId, loadPriority) {
+      console.info('uri: ' + uri + ', loadId: '+ loadId + ', loadPriority: '+ loadPriority);
     
       var key = uri.toString().replace(/(.*)(main\.dart\.(.+)\.js)/g, '$2');
       var src = assetBase + mainjsManifest[key];
@@ -71,5 +95,15 @@ const String flutterWebOptimizerSourceCode = r'''
       script.addEventListener("load", successCallback, false);
       script.addEventListener("error", errorCallback, false);
       document.body.appendChild(script);
+    }
+
+    function dartDeferredLibraryMultiLoader(uris, successCallback, errorCallback, loadId, loadPriority) {
+      // console.info('load main.dart.js_xxx.part: ' + uris + 'Date.now: ' + Date.now());
+      console.info('uris: ' + uris + ', loadId: '+ loadId + ', loadPriority: '+ loadPriority);
+      if (Object.prototype.toString.call(uris) === '[object Array]') {
+        for (var index in uris) {
+          dartDeferredLibraryLoader(uris[index], successCallback, errorCallback, loadId, loadPriority);
+        }
+      }
     }
     ''';
