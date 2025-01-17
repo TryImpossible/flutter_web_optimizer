@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:video_player/video_player.dart';
 
 class MainPage extends StatelessWidget {
@@ -28,6 +31,7 @@ class MainPage extends StatelessWidget {
             _Video(),
             _Toast(),
             _GoogleFonts(),
+            _PackageInfo(),
           ],
         ),
       ),
@@ -174,6 +178,31 @@ class _GoogleFonts extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _PackageInfo extends StatelessWidget {
+  const _PackageInfo({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PackageInfo>(
+      future: PackageInfo.fromPlatform(),
+      builder: (BuildContext context, AsyncSnapshot<PackageInfo> snapshot) {
+        final Map<String, dynamic> info =
+            snapshot.data?.data ?? <String, dynamic>{};
+        final String value = JsonEncoder.withIndent('  ').convert(info);
+        return Padding(
+          padding: EdgeInsets.all(10),
+          child: Column(
+            children: [
+              Text('PackageInfo'),
+              Text(value),
+            ],
+          ),
+        );
+      },
     );
   }
 }
