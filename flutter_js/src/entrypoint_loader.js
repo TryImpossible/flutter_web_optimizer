@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import { resolveUrlWithSegments } from "./utils.js";
+import { resolveUrlWithSegments, isValidAssetBase } from "./utils.js";
 
 /**
  * Handles injecting the main Flutter web entrypoint (main.dart.js), and notifying
@@ -88,13 +88,15 @@ export class FlutterEntrypointLoader {
    */
   didCreateEngineInitializer(engineInitializer) {
     // hook initializeEngine function，set assetBase and canvasKitBaseUrl
-    const originalInitializeEngine = engineInitializer.initializeEngine;
-    engineInitializer.initializeEngine = function(args) {
-      const _args = { assetBase, canvasKitBaseUrl: `${assetBase}canvaskit/` };
-      if (Object.prototype.toString.call(args).slice(8, -1) === 'Object') {
-        Object.assign(_args, args);  
+    if (isValidAssetBase(window.assetBase)) {
+      const originalInitializeEngine = engineInitializer.initializeEngine;
+      engineInitializer.initializeEngine = function(args) {
+        const _args = { assetBase, canvasKitBaseUrl: `${assetBase}canvaskit/` };
+        if (Object.prototype.toString.call(args).slice(8, -1) === 'Object') {
+          Object.assign(_args, args);  
+        }
+        return originalInitializeEngine.call(this, _args);
       }
-      return originalInitializeEngine.call(this, _args);
     }
 
     if (typeof this._didCreateEngineInitializerResolve === "function") {

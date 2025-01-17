@@ -56,3 +56,12 @@ export function getCanvaskitBaseUrl(config, buildConfig) {
   }
   return "canvaskit";
 }
+
+export function isValidAssetBase(url) {
+  try {
+    new URL(url);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
