@@ -167,7 +167,6 @@ export class FlutterEntrypointLoader {
         jsSupportRuntimeUri = this._ttPolicy.createScriptURL(jsSupportRuntimeUri);
       }
       const jsSupportRuntime = await import(jsSupportRuntimeUri);
-      console.error(`barry, jsSupportRuntimeUri=${jsSupportRuntimeUri}, moduleUri=${moduleUri}`)
 
       const compiledDartAppPromise = jsSupportRuntime.compileStreaming(fetch(moduleUri));
 
