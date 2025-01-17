@@ -1,3 +1,7 @@
+## 1.5.1
+
+- update `README.md`
+
 ## 1.5.0
 
 - the plugin is compatible with Flutter version 3.24 and above

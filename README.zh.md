@@ -9,6 +9,8 @@
 
 ## 功能
 
+[demo](https://tryimpossible.github.io/flutter_web_optimizer/)
+
 ![app_web_optimizer](https://github.com/TryImpossible/flutter_web_optimizer/raw/main/20230111-172132.png)
 
 - 通过大文件分片和资源文件cdn化方式，优化`flutter web`页面加载慢问题。
@@ -20,7 +22,7 @@
 
 ```yaml
 dev_dependencies:
-  flutter_web_optimizer: ^1.4.2
+  flutter_web_optimizer: ^1.5.1
 ```
 
 ## 用法
